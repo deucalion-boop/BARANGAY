@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Schedule</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/user.css">
+  <style>
+    /* Status badge styles for booking requests */
+    .status-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-align: center;
+      text-transform: capitalize;
+      min-width: 80px;
+    }
+
+    /* Status colors */
+    .status-pending {
+      background-color: #fef3c7;
+      color: #d97706;
+      border: 1px solid #fbbf24;
+    }
+
+    .status-approved {
+      background-color: #d1fae5;
+      color: #065f46;
+      border: 1px solid #34d399;
+    }
+
+    .status-rejected {
+      background-color: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #f87171;
+    }
+
+    .status-completed {
+      background-color: #e0e7ff;
+      color: #3730a3;
+      border: 1px solid #818cf8;
+    }
+
+    .status-cancelled {
+      background-color: #f3f4f6;
+      color: #374151;
+      border: 1px solid #9ca3af;
+    }
+
+    /* Status in the table */
+    td:nth-child(4) {
+      padding: 0.5rem;
+    }
+
+    td:nth-child(4) .status-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+    }
+
+    /* Optional: Add icons to status badges */
+    .status-pending::before {
+      content: "⏳";
+      margin-right: 0.25rem;
+    }
+
+    .status-approved::before {
+      content: "✅";
+      margin-right: 0.25rem;
+    }
+
+    .status-rejected::before {
+      content: "❌";
+      margin-right: 0.25rem;
+    }
+
+    .status-completed::before {
+      content: "✓";
+      margin-right: 0.25rem;
+    }
+
+    .status-cancelled::before {
+      content: "✕";
+      margin-right: 0.25rem;
+    }
+
+    .status-reschedule_requested {
+      background-color: #fef3c7;
+      color: #d97706;
+      border: 1px solid #fbbf24;
+    }
+
+    .status-reschedule_requested::before {
+      content: "🔄";
+      margin-right: 0.25rem;
+    }
+
+    .status-expired {
+      background-color: #f3f4f6;
+      color: #6b7280;
+      border: 1px solid #d1d5db;
+    }
+
+    .status-expired::before {
+      content: "⏰";
+      margin-right: 0.25rem;
+    }
+
+  .notification-icon {
+    position: relative;
+    cursor: pointer;
+    margin-right: 1rem;
+    font-size: 1.2rem;
+    color: var(--text-light);
+    transition: all 0.3s ease;
+    padding: 0.5rem;
+    border-radius: 50%;
+    z-index: 3002; /* ensure icon and its absolute children sit above page */
+  }
+
+    .notification-icon:hover {
+        color: var(--primary-dark);
+        background: rgba(102, 126, 234, 0.1);
+        transform: scale(1.1);
+    }
+
+    .notification-badge {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        background: #e53e3e;
+        color: white;
+        border-radius: 50%;
+        padding: 0.2rem 0.4rem;
+        font-size: 0.7rem;
+        font-weight: bold;
+        min-width: 18px;
+        text-align: center;
+        animation: pulse 2s infinite;
+        box-shadow: 0 2px 4px rgba(229, 62, 62, 0.3);
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+
+    /* Reschedule Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+    }
+
+    .modal-content {
+      background-color: white;
+      margin: 5% auto;
+      padding: 0;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem;
+      border-bottom: 1px solid #e2e8f0;
+      background: #ffffff;
+      color: #2d3748;
+      border-radius: 12px 12px 0 0;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .close-modal {
+      color: #4a5568;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: color 0.3s ease;
+    }
+
+    .close-modal:hover {
+      color: #2d3748;
+    }
+
+    .modal-form {
+      padding: 1.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #2d3748;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      transition: border-color 0.3s ease;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-group textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+      margin-top: 1.5rem;
+    }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #5a67d8;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #718096;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #4a5568;
+    }
+
+    .reschedule-info {
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .reschedule-info h4 {
+      margin: 0 0 0.5rem 0;
+      color: #2d3748;
+      font-size: 1rem;
+    }
+
+    .reschedule-info p {
+      margin: 0.25rem 0;
+      color: #4a5568;
+      font-size: 0.9rem;
+    }
+
+    .reschedule-reason {
+      background: #fff5f5;
+      border-left: 4px solid #f56565;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .reschedule-reason h5 {
+      margin: 0 0 0.5rem 0;
+      color: #c53030;
+      font-size: 0.9rem;
+    }
+
+    .reschedule-reason p {
+      margin: 0;
+      color: #742a2a;
+      font-size: 0.85rem;
+    }
+
+    /* Notification Dropdown Styles */
+    .notification-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+      min-width: 320px;
+      max-width: 400px;
+      max-height: 500px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      z-index: 3003; /* ensure on top of backdrop and page content */
+      display: none;
+      margin-top: 0.5rem;
+      transform: translateY(-10px);
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+
+    .notification-dropdown.show {
+      display: block;
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .notification-header {
+      padding: 1.25rem;
+      border-bottom: 1px solid #e2e8f0;
+      background: #ffffff;
+      border-radius: 12px 12px 0 0;
+      color: #2d3748;
+    }
+
+    .notification-header h4 {
+      margin: 0;
+      color: #2d3748;
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .notification-item {
+      padding: 1rem;
+      border-bottom: 1px solid #f1f5f9;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .notification-item:hover {
+      background: #f8fafc;
+    }
+
+    .notification-item:last-child {
+      border-bottom: none;
+      border-radius: 0 0 12px 12px;
+    }
+
+    .notification-item.unread {
+      background: #ffffff;
+      border-left: 4px solid #3b82f6;
+      box-shadow: none;
+    }
+
+    .notification-item.unread::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      right: 1rem;
+      width: 8px;
+      height: 8px;
+      background: #3b82f6;
+      border-radius: 50%;
+      transform: translateY(-50%);
+    }
+
+    .notification-title {
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 0.25rem;
+      font-size: 0.9rem;
+    }
+
+    .notification-message {
+      color: #4a5568;
+      font-size: 0.85rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .notification-time {
+      color: #718096;
+      font-size: 0.75rem;
+    }
+
+    .notification-empty {
+      padding: 2rem;
+      text-align: center;
+      color: #718096;
+    }
+
+    .notification-empty i {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      opacity: 0.5;
+    }
+
+    /* Backdrop behind notifications dropdown */
+    .notification-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.35); /* slate-900 at 35% */
+      z-index: 3001; /* just below dropdown but above rest */
+      display: none;
+    }
+
+    /* Avatar dropdown */
+  .avatar-wrapper { position: relative; display: inline-flex; align-items: center; gap:.5rem; cursor: pointer; }
+    .avatar-wrapper .user-avatar { width:32px; height:32px; font-size:0.9rem; display:flex; align-items:center; justify-content:center; overflow:hidden; border-radius:50%; background: #eef2ff; color:#334155; font-weight:700; }
+    .profile-dropdown { position:absolute; right:0; top: calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:10px; box-shadow: 0 12px 28px rgba(0,0,0,.12); min-width: 180px; display:none; z-index: 3004; overflow:hidden; }
+    .profile-dropdown a { display:flex; align-items:center; gap:.5rem; padding:.6rem .85rem; color:#1f2937; text-decoration:none; font-size:.9rem; }
+    .profile-dropdown a i { width:18px; text-align:center; color:#64748b; }
+  .profile-dropdown a:hover { background:#f8fafc; }
+  .avatar-wrapper.open .profile-dropdown { display:block; }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+        <aside class="sidebar" role="navigation" aria-label="User navigation">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-home"></i><span>Barangay</span></h2>
+                <button class="toggle-btn" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+                <div style="font-size:.9rem; opacity:.9; margin-top:.5rem;">Resident Dashboard</div>
+            </div>
+
+            <ul class="sidebar-menu">
+                <li><a href="/users/dashboard" data-tooltip="Dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+                <li><a href="/users/announcements" data-tooltip="Announcements"><i class="fas fa-bullhorn"></i><span>Announcements</span></a></li>
+                <li><a href="/users/schedule" class="active" data-tooltip="Schedule"><i class="fas fa-calendar-alt"></i><span>Schedule</span></a></li>
+                <li><a id="logout-btn" href="/users/logout" data-tooltip="Logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
+            </ul>
+        </aside>
+  <div class="overlay"></div>
+  <!-- Backdrop for notification dropdown placed at root to avoid stacking issues -->
+  <div class="notification-backdrop" id="notification-backdrop"></div>
+
+    <main class="main-content">
+      <div class="header">
+                <h1>Welcome, <%= (user.firstName && user.firstName.length) ? user.firstName : (user.name ? user.name.split(' ')[0] : 'User') %>!</h1>
+                <div class="user-info">
+          <div class="notification-icon" id="notification-icon" style="position: relative;">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge" id="notification-badge" style="display: none;">0</span>
+            <div class="notification-dropdown" id="notification-dropdown">
+                            <div class="notification-header">
+                                <h4><i class="fas fa-bell"></i> Notifications</h4>
+                            </div>
+                            <div id="notification-list">
+                                <div class="notification-empty">
+                                    <i class="fas fa-bell-slash"></i>
+                                    <p>No notifications</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+          <div style="text-align:right;">
+            <div style="font-weight:700; display:flex; align-items:center; gap:.5rem; justify-content:flex-end;">
+              <% const _avatarUrl = (user && (user.avatarUrl || user.profileImageUrl || user.imageUrl || user.photoUrl)); %>
+              <div class="avatar-wrapper">
+                <div class="user-avatar">
+                  <% if (_avatarUrl) { %>
+                    <img src="<%= _avatarUrl %>" alt="Profile" style="width:100%; height:100%; object-fit:cover; border-radius:50%;" />
+                  <% } else { %>
+                    <%= (user.name && user.name.length) ? user.name.charAt(0).toUpperCase() : 'U' %>
+                  <% } %>
+                </div>
+                <span><%= user.name %></span>
+                <div class="profile-dropdown">
+                  <a href="/users/settings"><i class="fas fa-gear"></i> Settings</a>
+                </div>
+              </div>
+            </div>
+            <div style="font-size:.9rem; color:var(--text-light);"><%= user.email %> | Purok <%= user.unitNumber %></div>
+          </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom:1rem;">
+                <h4>Request Booking</h4>
+                <form action="/users/schedule/request" method="POST">
+                    <div style="display:flex;gap:.5rem;flex-wrap:wrap; align-items:center; margin-top:.5rem;">
+                        <input type="text" name="title" placeholder="Event title" required style="padding:.5rem;">
+                        <input type="datetime-local" name="start" required style="padding:.5rem;">
+                        <select name="appointmentType" style="padding:.5rem;">
+                            <% if (typeof appointmentTypes !== 'undefined' && appointmentTypes && appointmentTypes.length) { %>
+                                <% appointmentTypes.forEach(function(t){ %>
+                                    <option value="<%= t.name %>"><%= t.name %></option>
+                                <% }) %>
+                            <% } else { %>
+                                <option value="Check up">Check up</option>
+                                <option value="BMI">BMI</option>
+                                <option value="BP">BP</option>
+                                <option value="Consultation">Consultation</option>
+                <option value="Immunization">Immunization</option>
+                            <% } %>
+                        </select>
+                        <button class="btn" type="submit">Request Booking</button>
+                    </div>
+                </form>
+                <p class="small" style="margin-top:.5rem">Booking requests are reviewed by admins. Requests will automatically expire if not reviewed within the configured time period.</p>
+            </div>
+            <div class="card">
+                <h3>My Booking Requests</h3>
+                <p class="small">Below are the booking requests you submitted. The "Expired Date" shows when pending requests will automatically expire if not reviewed by admins.</p>
+
+                <div class="table-responsive">
+                    <table style="width:100%; border-collapse: collapse; margin-top:.75rem;">
+                    <thead>
+                        <tr style="text-align:left; border-bottom:1px solid #e2e8f0;">
+                            <th style="padding:.5rem">Title</th>
+                            <th style="padding:.5rem">Start</th>
+                            <th style="padding:.5rem">Expired Date</th>
+                            <th style="padding:.5rem">Status</th>
+                            <th style="padding:.5rem">Requested</th>
+                            <th style="padding:.5rem">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (requests && requests.length) { %>
+                            <% requests.forEach(function(r) { %>
+                                <%
+                                    // Calculate expired date (3 days after creation, configurable by admin)
+                                    let expiredDate = '-';
+                                    if (r.createdAt && r.status === 'pending') {
+                                        const createdDate = new Date(r.createdAt);
+                                        const expiryDate = new Date(createdDate);
+                                        expiryDate.setDate(createdDate.getDate() + 3); // Default 3 days
+                                        expiredDate = expiryDate.toLocaleString();
+                                    } else if (r.expiredAt) {
+                                        expiredDate = new Date(r.expiredAt).toLocaleString();
+                                    } else if (r.status === 'expired') {
+                                        expiredDate = 'Already Expired';
+                                    }
+                                %>
+                                <tr style="border-bottom:1px solid #f1f5f9;">
+                                    <td style="padding:.5rem"><%= r.title %></td>
+                                    <td style="padding:.5rem"><%= r.start ? new Date(r.start).toLocaleString() : '-' %></td>
+                                    <td style="padding:.5rem"><%= expiredDate %></td>
+                  <td style="padding:.5rem">
+                    <span class="status-badge status-<%= r.status.toLowerCase() %>">
+                      <% if (r.status === 'reschedule_requested') { %>
+                        <%= r.newStart ? 'Waiting for response' : 'Action required' %>
+                      <% } else if (r.status === 'rejected') { %>
+                        Reschedule
+                      <% } else { %>
+                        <%= r.status %>
+                      <% } %>
+                    </span>
+                  </td>
+                                    <td style="padding:.5rem"><%= r.createdAt ? new Date(r.createdAt).toLocaleString() : '-' %></td>
+                  <td style="padding:.5rem">
+                    <% if (r.status === 'reschedule_requested') { %>
+                      <% if (r.newStart) { %>
+                        <button class="btn btn-secondary" disabled style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">
+                          <i class="fas fa-clock"></i> Waiting for response
+                        </button>
+                      <% } else { %>
+                        <button class="btn btn-primary reschedule-btn"
+                            data-request-id="<%= r._id %>"
+                            data-title="<%= r.title || '' %>"
+                            data-reason="<%= r.rescheduleReason || '' %>"
+                            data-notes="<%= r.rescheduleNotes || '' %>"
+                            data-start="<%= r.start || '' %>"
+                            data-end="<%= r.end || '' %>"
+                            style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">
+                          <i class="fas fa-calendar-plus"></i> Reschedule
+                        </button>
+                      <% } %>
+                    <% } else if (r.status === 'rejected') { %>
+                                            <button class="btn btn-primary reschedule-btn"
+                                                    data-request-id="<%= r._id %>"
+                                                    data-title="<%= r.title || '' %>"
+                                                    data-reason="<%= r.rescheduleReason || '' %>"
+                                                    data-notes="<%= r.rescheduleNotes || '' %>"
+                                                    data-start="<%= r.start || '' %>"
+                                                    data-end="<%= r.end || '' %>"
+                                                    style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">
+                                                <i class="fas fa-calendar-plus"></i> Request Reschedule
+                                            </button>
+                                        <% } else if (r.status === 'pending') { %>
+                                            <button class="btn btn-secondary" disabled style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">
+                                                <i class="fas fa-clock"></i> Waiting
+                                            </button>
+                                        <% } else { %>
+                                            <span style="color: #718096; font-size: 0.8rem;">-</span>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="6" style="padding:.75rem; color:#718096">No booking requests found.</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Reschedule Modal -->
+    <div id="rescheduleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-calendar-plus"></i> Reschedule Appointment</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <form id="rescheduleForm" class="modal-form">
+                <input type="hidden" id="rescheduleRequestId" name="requestId">
+                
+                <div class="reschedule-info">
+                    <h4><i class="fas fa-info-circle"></i> Original Request Details</h4>
+                    <p><strong>Title:</strong> <span id="originalTitle"></span></p>
+                    <p><strong>Appointment Date:</strong> <span id="originalStart"></span></p>
+                </div>
+
+                <div class="reschedule-reason">
+                    <h5><i class="fas fa-exclamation-triangle"></i> Reschedule Reason</h5>
+                    <p id="rescheduleReasonText"></p>
+                    <p id="rescheduleNotesText" style="margin-top: 0.5rem; font-style: italic;"></p>
+                </div>
+
+                <div class="form-group">
+                    <label for="newStart"><i class="fas fa-calendar"></i> New Appointment Date & Time *</label>
+                    <input type="datetime-local" id="newStart" name="newStart" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="rescheduleComments"><i class="fas fa-comment"></i> Additional Comments (Optional)</label>
+                    <textarea id="rescheduleComments" name="comments" placeholder="Please provide any additional information about your preferred reschedule time..." rows="3"></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeRescheduleModal()">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-calendar-check"></i> Submit Reschedule Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/user.js"></script>
+    <script>
+        // Notification functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const notificationIcon = document.getElementById('notification-icon');
+            const notificationBadge = document.getElementById('notification-badge');
+            const notificationDropdown = document.getElementById('notification-dropdown');
+            const notificationBackdrop = document.getElementById('notification-backdrop');
+      let hideDropdownTimer = null;
+
+            // Function to update notification count
+    function updateNotificationCount() {
+        fetch('/users/api/notifications/count')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.count > 0) {
+                            notificationBadge.textContent = data.count;
+                            notificationBadge.style.display = 'inline-block';
+                        } else {
+                            notificationBadge.style.display = 'none';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching notification count:', error);
+                    });
+            }
+
+      // Expose for global handlers
+      window.updateNotificationCount = updateNotificationCount;
+
+            // Update notification count on page load
+            updateNotificationCount();
+
+            // Update notification count every 30 seconds
+            setInterval(updateNotificationCount, 30000);
+
+      // Handle notification icon click (mobile/support)
+      notificationIcon.addEventListener('click', function() {
+        toggleNotificationDropdown();
+      });
+
+      // Hover interactions to keep dropdown visible while hovering
+      function showNotificationDropdown() {
+        if (!notificationDropdown.classList.contains('show')) {
+          notificationDropdown.classList.add('show');
+          loadNotifications();
+        }
+        if (hideDropdownTimer) {
+          clearTimeout(hideDropdownTimer);
+          hideDropdownTimer = null;
+        }
+        if (notificationBackdrop) notificationBackdrop.style.display = 'block';
+      }
+
+      function hideNotificationDropdownWithDelay() {
+        if (hideDropdownTimer) clearTimeout(hideDropdownTimer);
+        hideDropdownTimer = setTimeout(() => {
+          notificationDropdown.classList.remove('show');
+          if (notificationBackdrop) notificationBackdrop.style.display = 'none';
+        }, 200); // small delay prevents flicker when moving mouse between icon and dropdown
+      }
+
+      notificationIcon.addEventListener('mouseenter', showNotificationDropdown);
+      notificationIcon.addEventListener('mouseleave', hideNotificationDropdownWithDelay);
+      notificationDropdown.addEventListener('mouseenter', showNotificationDropdown);
+      notificationDropdown.addEventListener('mouseleave', hideNotificationDropdownWithDelay);
+
+      if (notificationBackdrop) {
+        notificationBackdrop.addEventListener('click', () => {
+          notificationDropdown.classList.remove('show');
+          notificationBackdrop.style.display = 'none';
+        });
+      }
+
+            // Initialize reschedule modal
+            initRescheduleModal();
+
+            // Load notifications on page load
+            loadNotifications();
+
+      // Avatar dropdown: click to toggle, close on outside click
+      (function initAvatarDropdown(){
+        document.querySelectorAll('.avatar-wrapper').forEach(function(wrapper){
+          const dropdown = wrapper.querySelector('.profile-dropdown');
+          if (!dropdown) return;
+          wrapper.addEventListener('click', function(e){
+            e.stopPropagation();
+            document.querySelectorAll('.avatar-wrapper.open').forEach(w => { if (w !== wrapper) w.classList.remove('open'); });
+            wrapper.classList.toggle('open');
+          });
+          dropdown.addEventListener('click', function(e){ e.stopPropagation(); });
+        });
+        document.addEventListener('click', function(){
+          document.querySelectorAll('.avatar-wrapper.open').forEach(w => w.classList.remove('open'));
+        });
+      })();
+
+            // Add event listeners for reschedule buttons
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.reschedule-btn')) {
+                    const btn = e.target.closest('.reschedule-btn');
+                    const requestId = btn.dataset.requestId;
+                    const title = btn.dataset.title;
+                    const reason = btn.dataset.reason;
+                    const notes = btn.dataset.notes;
+                    const start = btn.dataset.start;
+                    const end = btn.dataset.end;
+                    
+                    openRescheduleModal(requestId, title, reason, notes, start, end);
+                }
+            });
+        });
+
+        // Reschedule Modal Functions
+        function initRescheduleModal() {
+            const modal = document.getElementById('rescheduleModal');
+            const closeBtn = modal.querySelector('.close-modal');
+            const form = document.getElementById('rescheduleForm');
+
+            // Close modal events
+            closeBtn.addEventListener('click', closeRescheduleModal);
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeRescheduleModal();
+                }
+            });
+
+            // Form submission
+            form.addEventListener('submit', handleRescheduleSubmit);
+        }
+
+        function openRescheduleModal(requestId, title, reason, notes, originalStart, originalEnd) {
+            const modal = document.getElementById('rescheduleModal');
+            const form = document.getElementById('rescheduleForm');
+            
+            if (!modal || !form) {
+                alert('Error: Modal not found');
+                return;
+            }
+            
+            // Populate form fields
+            document.getElementById('rescheduleRequestId').value = requestId;
+            document.getElementById('originalTitle').textContent = title || 'Untitled';
+            document.getElementById('originalStart').textContent = originalStart ? new Date(originalStart).toLocaleString() : 'Not specified';
+            document.getElementById('rescheduleReasonText').textContent = reason || 'No reason provided';
+            document.getElementById('rescheduleNotesText').textContent = notes || 'No additional notes';
+            
+            // Clear form inputs
+            form.reset();
+            document.getElementById('rescheduleRequestId').value = requestId;
+            
+            // Set minimum date to today
+            const today = new Date().toISOString().slice(0, 16);
+            document.getElementById('newStart').min = today;
+            
+            // Show modal
+            modal.style.display = 'block';
+        }
+
+        function closeRescheduleModal() {
+            const modal = document.getElementById('rescheduleModal');
+            modal.style.display = 'none';
+        }
+
+        async function handleRescheduleSubmit(e) {
+            e.preventDefault();
+            
+            const form = e.target;
+            const formData = new FormData(form);
+            const requestId = formData.get('requestId');
+            const newStart = formData.get('newStart');
+            const comments = formData.get('comments');
+
+            try {
+                const response = await fetch('/users/schedule/reschedule', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        requestId,
+                        newStart,
+                        comments
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Reschedule request submitted successfully!');
+                    closeRescheduleModal();
+                    // Reload the page to show updated status
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to submit reschedule request'));
+                }
+            } catch (error) {
+                console.error('Error submitting reschedule request:', error);
+                alert('Failed to submit reschedule request. Please try again.');
+            }
+        }
+
+        // Notification Functions
+    function toggleNotificationDropdown() {
+      const dropdown = document.getElementById('notification-dropdown');
+      const backdrop = document.getElementById('notification-backdrop');
+      if (dropdown.classList.contains('show')) {
+        dropdown.classList.remove('show');
+        if (backdrop) backdrop.style.display = 'none';
+      } else {
+        dropdown.classList.add('show');
+        if (backdrop) backdrop.style.display = 'block';
+        loadNotifications();
+      }
+    }
+
+    async function loadNotifications() {
+            try {
+        const response = await fetch('/users/api/notifications?unread=1');
+                const data = await response.json();
+                
+                if (data.notifications) {
+                    displayNotifications(data.notifications);
+                }
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            }
+        }
+
+        function displayNotifications(notifications) {
+            const notificationList = document.getElementById('notification-list');
+            
+            if (notifications.length === 0) {
+                notificationList.innerHTML = `
+                    <div class="notification-empty">
+                        <i class="fas fa-bell-slash"></i>
+                        <p>No notifications</p>
+                    </div>
+                `;
+                return;
+            }
+
+            notificationList.innerHTML = notifications.map(notification => `
+                <div class="notification-item ${!notification.isRead ? 'unread' : ''}" 
+                     onclick="handleNotificationClick('${notification._id}', '${notification.actionUrl || ''}')">
+                    <div class="notification-title">${notification.title}</div>
+                    <div class="notification-message">${notification.message}</div>
+                    <div class="notification-time">${new Date(notification.createdAt).toLocaleString()}</div>
+                </div>
+            `).join('');
+        }
+
+  async function handleNotificationClick(notificationId, actionUrl) {
+            try {
+                // Mark notification as read
+        await fetch(`/users/api/notifications/${notificationId}/read`, {
+                    method: 'POST'
+                });
+
+                // Update notification count
+        if (window.updateNotificationCount) window.updateNotificationCount();
+
+                // Navigate to action URL if provided
+                if (actionUrl) {
+                    window.location.href = actionUrl;
+                } else {
+                    // Close dropdown
+                    document.getElementById('notification-dropdown').classList.remove('show');
+                }
+            } catch (error) {
+                console.error('Error handling notification click:', error);
+            }
+        }
+
+        // Close notification dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+      const notificationIcon = document.getElementById('notification-icon');
+      const dropdown = document.getElementById('notification-dropdown');
+      const backdrop = document.getElementById('notification-backdrop');
+            
+            if (!notificationIcon.contains(e.target) && dropdown.classList.contains('show')) {
+        dropdown.classList.remove('show');
+        if (backdrop) backdrop.style.display = 'none';
+            }
+        });
+
+    </script>
+</body>
+</html>

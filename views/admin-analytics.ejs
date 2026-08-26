@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title || 'Admin Analytics' %></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="/css/admin.css">
+    <style>
+        /* User Avatar Styles */
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-weight: bold;
+        }
+        /* Stats grid: fixed 2x2 on desktop, stacks on small screens */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        @media (max-width: 640px) {
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+        .stat-card {
+            background: var(--white);
+            padding: 1.25rem 1.4rem;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+        .stat-label {
+            color: var(--text-light);
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        /* Stat icons */
+        .stat-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1.2rem;
+            flex: 0 0 auto;
+        }
+        .stat-icon.users { background: linear-gradient(135deg, #60a5fa, #3b82f6); }
+        .stat-icon.active { background: linear-gradient(135deg, #34d399, #10b981); }
+        .stat-icon.appts { background: linear-gradient(135deg, #a78bfa, #7c3aed); }
+        .stat-icon.pending { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .chart-card {
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            padding: 0.75rem;
+            height: 400px;
+            max-width: 400px;
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .chart-card h3 {
+            margin: 0 0 0.5rem 0;
+            line-height: 1.2;
+            word-break: break-word;
+        }
+        .chart-card > div { flex: 0 0 auto; }
+        .chart-card canvas {
+            flex: 1 1 auto;
+            width: 100% !important;
+            height: 100% !important;
+            min-height: 0;
+            cursor: pointer; /* indicate interactivity */
+        }
+        .chart-card.full { grid-column: 1 / -1; height: 400px; max-width: 400px; }
+        .charts { display: grid; gap: 0.75rem; margin-bottom: 0.75rem; justify-content: center; }
+        .charts-compact { grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); }
+        .charts-wide { grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); }
+    .chart-card.compact { height: 400px; }
+    .chart-card.wide { grid-column: 1 / -1; height: 420px; max-width: none; }
+    .chart-card.medium { grid-column: span 2; height: 400px; max-width: none; }
+    /* Force a card to start at first column on its row */
+    .start-col-1 { grid-column: 1; }
+        @media (max-width: 1100px) {
+            .charts-compact { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 700px) {
+            .charts-compact { grid-template-columns: 1fr; }
+            .chart-card,
+            .chart-card.full,
+            .chart-card.compact,
+            .chart-card.wide,
+            .chart-card.medium { max-width: 100%; height: 400px; }
+        }
+        
+        /* Loading and filter states */
+        #analytics-filter:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .stat-number .fa-spinner {
+            color: var(--primary-color);
+        }
+        
+        .alert-danger {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Header layout: title left, filters aligned near title */
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .filter-controls {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            flex-wrap: wrap;
+        }
+        /* Keep Custom Range aligned near the title on wide screens */
+        #filter-controls-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            flex-wrap: nowrap;
+            vertical-align: middle;
+        }
+        #filter-controls-wrap input[type="date"],
+        #filter-controls-wrap input[type="month"],
+        #filter-controls-wrap input[type="number"] {
+            width: 140px;
+            max-width: 100%;
+        }
+        #filter-controls-wrap input[type="datetime-local"] {
+            width: 180px;
+            max-width: 100%;
+        }
+        /* Slightly smaller control sizes */
+        .filter-controls select,
+        .filter-controls input,
+        .filter-controls button {
+            font-size: 0.9rem;
+        }
+        @media (max-width: 900px) {
+            #filter-controls-wrap { flex-wrap: wrap; }
+        }
+        @media (max-width: 700px) {
+            .filter-controls { width: 100%; padding-top: 0.25rem; }
+        }
+
+        /* Reset visibility button hover/click feedback */
+        #reset-visibility {
+            transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+        }
+        #reset-visibility:hover,
+        #reset-visibility.hovered {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-lg);
+            filter: brightness(0.95);
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar" role="navigation" aria-label="Admin navigation">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-cog"></i><span>Admin Panel</span></h2>
+                <button class="toggle-btn" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/admin/dashboard" data-tooltip="Dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+                <li><a href="/admin/analytics" class="active" data-tooltip="Analytics"><i class="fas fa-chart-bar"></i><span>Analytics</span></a></li>
+                <li><a href="/admin/residents" data-tooltip="Residents"><i class="fas fa-users"></i><span>Residents</span></a></li>
+                <li><a href="/admin/requests/residents" data-tooltip="Resident Requests"><i class="fas fa-user-clock"></i><span>Resident Requests</span></a></li>
+                <li><a href="/admin/schedule" data-tooltip="Schedule"><i class="fas fa-calendar-alt"></i><span>Schedule</span></a></li>
+                <li><a href="/admin/announcements" data-tooltip="Announcements"><i class="fas fa-bullhorn"></i><span>Announcements</span></a></li>
+                <li><a href="/admin/inventory" data-tooltip="Inventory"><i class="fas fa-inbox"></i><span>Inventory</span></a></li>
+                <li><a href="/admin/settings" data-tooltip="Settings"><i class="fas fa-cog"></i><span>Settings</span></a></li>
+            </ul>
+        </aside>
+    <div class="overlay"></div>
+
+        <main class="main-content">
+            <div class="header">
+                <div class="header-top">
+                    <h1>Analytics Dashboard</h1>
+                    <div class="filter-controls">
+                        <label for="analytics-filter" style="font-weight: 600; color: var(--text-light);">Range:</label>
+                            <select id="analytics-filter" style="padding: 0.3rem; border-radius: 5px; border: 1px solid #e2e8f0; min-width: 100px;">
+                            <option value="today">Today</option>
+                            <option value="date">Specific Date…</option>
+                            <option value="month" selected>Specific Month…</option>
+                            <option value="year">Specific Year…</option>
+                            <option value="range">Custom Range…</option>
+                            <option value="this-month">This Month</option>
+                            <option value="this-year">This Year</option>
+                        </select>
+                        <!-- Dynamic filter inputs: grouped to stay close to the select -->
+                        <span id="filter-controls-wrap" style="display:inline-flex; align-items:center; gap:0.4rem; flex-wrap:nowrap;">
+                                <input type="date" id="filter-date" style="display:none; padding: 0.3rem; border-radius:5px; border:1px solid #e2e8f0;" />
+                                <input type="month" id="filter-month" style="display:none; padding: 0.3rem; border-radius:5px; border:1px solid #e2e8f0;" />
+                                <input type="number" id="filter-year" min="2000" max="2100" placeholder="Year" style="display:none; width: 80px; padding: 0.3rem; border-radius:5px; border:1px solid #e2e8f0;" />
+                                <input type="datetime-local" id="filter-start" style="display:none; padding: 0.3rem; border-radius:5px; border:1px solid #e2e8f0;" />
+                            <span id="filter-to" style="display:none; color:#64748b;">to</span>
+                <input type="datetime-local" id="filter-end" style="display:none; padding: 0.3rem; border-radius:5px; border:1px solid #e2e8f0;" />
+                <button id="apply-filter" style="display:none; padding:0.35rem 0.6rem; border:1px solid #4C3BCF; background:#4C3BCF; color:white; border-radius:5px;">Apply</button>
+                        </span>
+            <button id="reset-visibility" title="Show all hidden chart slices/series" style="padding:0.35rem 0.6rem; border:1px solid #94a3b8; background:#f8fafc; color:#334155; border-radius:5px;">Reset Chart Visibility</button>
+                        <span id="filter-status" style="font-size: 0.875rem; color: var(--success-color); visibility:hidden; display:inline-block;">
+                            <i class="fas fa-check-circle"></i> Updated
+                        </span>
+                    </div>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <%= username.charAt(0).toUpperCase() %>
+                    </div>
+                    <span>Welcome, <%= username %> (<%= admin.role %>)</span>
+                    <button class="logout-btn" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                </div>
+            </div>
+
+            <section class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon users" aria-hidden="true"><i class="fas fa-users"></i></div>
+                    <div>
+                        <div class="stat-number"><%= statistics ? statistics.totalUsers : '—' %></div>
+                        <div class="stat-label">Total Users</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon active" aria-hidden="true"><i class="fas fa-user-check"></i></div>
+                    <div>
+                        <div class="stat-number"><%= statistics ? statistics.activeUsers : '—' %></div>
+                        <div class="stat-label">Active Users</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon appts" aria-hidden="true"><i class="fas fa-calendar-check"></i></div>
+                    <div>
+                        <div class="stat-number"><%= statistics ? statistics.totalAppointments : '—' %></div>
+                        <div class="stat-label">Appointments</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon pending" aria-hidden="true"><i class="fas fa-hourglass-half"></i></div>
+                    <div>
+                        <div class="stat-number"><%= statistics ? statistics.pending : '—' %></div>
+                        <div class="stat-label">Pending (appointments + requests)</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="charts charts-compact">
+                <div class="chart-card compact">
+                    <h3>Appointments by Status</h3>
+                    <canvas id="chartStatus" height="120"></canvas>
+                </div>
+                <div class="chart-card medium">
+                    <h3>Appointments by Type (Trend)</h3>
+                    <canvas id="chartApptTypes" height="120"></canvas>
+                </div>
+                <div class="chart-card compact">
+                    <h3>Funnel: Requested → Completed</h3>
+                    <canvas id="chartFunnel" height="120"></canvas>
+                </div>
+                <div class="chart-card medium">
+                    <h3>Expiry (Daily) <span id="expiry-asof" style="font-weight:600; color:#334155; font-size:0.9rem;"></span></h3>
+                    <canvas id="chartExpiryPredictions" height="160"></canvas>
+                </div>
+                <div class="chart-card compact start-col-1">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:0.5rem;">
+                        <div style="display:flex; align-items:center; gap:0.75rem;">
+                            <h3 style="margin:0;">Users Online</h3>
+                            <span id="online-now-pill" style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.85rem; color:#334155; background:#eef2ff; border:1px solid #c7d2fe; padding:0.15rem 0.5rem; border-radius:999px;">
+                                Now: <strong id="online-now-count">—</strong>
+                            </span>
+                        </div>
+                        <!-- Users Online uses the main filter; extra control removed for consistency -->
+                    </div>
+                    <canvas id="chartUsers" height="150"></canvas>
+                </div>
+                
+                <div class="chart-card compact">
+                    <h3>Stock Risk Breakdown</h3>
+                    <canvas id="chartStockRisk" height="120"></canvas>
+                </div>
+                <div class="chart-card compact">
+                    <h3>DOS by Category</h3>
+                    <canvas id="chartDOS" height="160"></canvas>
+                </div>
+            </section>
+
+
+            <section style="margin-top:1rem;">
+                <!-- Raw JSON removed for cleaner analytics UI -->
+            </section>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="/js/admin.js"></script>
+    <script>
+    // Logout button handler
+    (function(){
+        const btn = document.getElementById('logout-btn');
+        if (btn) {
+            btn.addEventListener('click', function() {
+                if (!confirm('Are you sure you want to logout?')) return;
+                fetch('/admin/logout', { method: 'POST' })
+                    .then(r => r.json())
+                    .then(d => {
+                        if (d && d.success) {
+                            window.location.href = '/';
+                        } else {
+                            window.location.href = '/';
+                        }
+                    })
+                    .catch(() => { window.location.href = '/'; });
+            });
+        }
+    })();
+    const stats = JSON.parse('<%- JSON.stringify(statistics || {}).replace(/</g, "\\u003c") %>');
+        // Register Chart.js datalabels plugin
+        if (window.Chart && window.ChartDataLabels) {
+            Chart.register(ChartDataLabels);
+        }
+        // Global Chart.js defaults for a more professional look
+        if (window.Chart) {
+            // Typography and colors
+            Chart.defaults.font.family = "Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji'";
+            Chart.defaults.font.size = 12;
+            Chart.defaults.color = '#334155';
+            // Fill available space inside fixed-size cards
+            Chart.defaults.maintainAspectRatio = false;
+            // Legend
+            Chart.defaults.plugins.legend.position = 'bottom';
+            if (Chart.defaults.plugins.legend.labels) {
+                Chart.defaults.plugins.legend.labels.usePointStyle = true;
+                Chart.defaults.plugins.legend.labels.boxWidth = 10;
+            }
+            // Tooltips: show "Label: value (xx%)" for pies/doughnuts; otherwise "Label: value"
+            Chart.defaults.plugins.tooltip = Chart.defaults.plugins.tooltip || {};
+            Chart.defaults.plugins.tooltip.backgroundColor = '#ffffff';
+            Chart.defaults.plugins.tooltip.borderColor = '#e2e8f0';
+            Chart.defaults.plugins.tooltip.borderWidth = 1;
+            Chart.defaults.plugins.tooltip.titleColor = '#0f172a';
+            Chart.defaults.plugins.tooltip.bodyColor = '#334155';
+            Chart.defaults.plugins.tooltip.callbacks = Chart.defaults.plugins.tooltip.callbacks || {};
+            Chart.defaults.plugins.tooltip.callbacks.label = function(ctx) {
+                const type = ctx.chart && ctx.chart.config && ctx.chart.config.type;
+                // Derive a primitive numeric/string value for display
+                let val;
+                if (typeof ctx.parsed === 'object' && ctx.parsed !== null) {
+                    // For line/bar charts in v3+, values are often on parsed.y (vertical) or parsed.x (horizontal)
+                    val = (ctx.parsed.y ?? ctx.parsed.x ?? ctx.raw);
+                } else {
+                    val = (ctx.parsed ?? ctx.raw);
+                }
+                const num = Number(val);
+                const displayVal = Number.isFinite(num) ? num.toLocaleString() : String(val);
+                if (type === 'pie' || type === 'doughnut') {
+                    const label = ctx.label || '';
+                    const dataArr = (ctx.chart.data && ctx.chart.data.datasets && ctx.chart.data.datasets[0] && ctx.chart.data.datasets[0].data) || [];
+                    const total = dataArr.reduce((a,b)=>a+Number(b||0),0) || 0;
+                    const pct = total ? Math.round(((Number.isFinite(num)?num:Number(val||0))/total)*100) : 0;
+                    return `${label}: ${displayVal} (${pct}%)`;
+                }
+                const dsLabel = (ctx.dataset && ctx.dataset.label) || '';
+                return `${dsLabel}: ${displayVal}`;
+            };
+
+            // DataLabels: only show on pie/doughnut as percentages
+            Chart.defaults.plugins.datalabels = {
+                color: '#334155',
+                font: { weight: '600', size: 11 },
+                display: function(ctx) {
+                    const t = ctx.chart && ctx.chart.config && ctx.chart.config.type;
+                    return t === 'pie' || t === 'doughnut';
+                },
+                formatter: (value, ctx) => {
+                    const ds = ctx.chart.data.datasets[0];
+                    const total = (ds.data || []).reduce((a,b)=>a+Number(b||0),0);
+                    if (!total || !value) return '';
+                    const pct = Math.round((value/total)*100);
+                    return `${pct}%`;
+                }
+            };
+        }
+        // Chart instances
+    let chartStatus, chartUsers, chartExpiryPred, chartApptTypes, chartFunnel, chartStockRisk, chartDOS;
+
+        // Utility: clamp to non-negative integer
+        const toCount = (n) => Math.max(0, Math.round(Number.isFinite(n) ? n : 0));
+
+
+
+        function buildQueryFromFilterState(state) {
+            // Returns a query string for /admin/api/analytics/filter based on the state
+            // Supported:
+            // - period (back-compat): today | month | year
+            // - mode: date | month | year | range
+            const params = new URLSearchParams();
+            if (typeof state === 'string') {
+                // legacy
+                params.set('period', state);
+                return params.toString();
+            }
+            const mode = state.mode;
+            if (!mode || mode === 'today' || mode === 'this-month' || mode === 'this-year') {
+                const periodMap = { 'today': 'today', 'this-month': 'month', 'this-year': 'year' };
+                params.set('period', periodMap[mode] || 'month');
+                return params.toString();
+            }
+            params.set('mode', mode);
+            if (mode === 'date' && state.date) params.set('date', state.date);
+            if (mode === 'month' && state.month) params.set('month', state.month); // YYYY-MM
+            if (mode === 'year' && state.year) params.set('year', String(state.year));
+            if (mode === 'range' && state.start && state.end) {
+                params.set('start', state.start);
+                params.set('end', state.end);
+            }
+            return params.toString();
+        }
+
+        async function fetchAnalyticsData(filterState) {
+            try {
+                const query = buildQueryFromFilterState(filterState);
+                const response = await fetch(`/admin/api/analytics/filter?${query}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch analytics data');
+                }
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching analytics data:', error);
+                // Return fallback data if API fails
+                return {
+                    statistics: stats,
+                    chartData: {
+                        appointmentsStatus: [stats.pending || 0, Math.max(0, (stats.totalAppointments || 0) - (stats.pending || 0) - (stats.completed || 0)), stats.completed || 0],
+                        activeUsers: [stats.activeUsers || 0, Math.max(0, (stats.totalUsers || 0) - (stats.activeUsers || 0))],
+                        appointmentsTrend: generateFallbackTrend(12, stats.totalAppointments || 0),
+                        usersTrend: generateFallbackTrend(10, stats.totalUsers || 0),
+                        appointmentsByTypeTrend: {
+                            labels: Array.from({length: 12}, (_,i)=>`P${i+1}`),
+                            series: [
+                                { label: 'BMI', data: generateFallbackTrend(12, 5) },
+                                { label: 'BP', data: generateFallbackTrend(12, 5) },
+                                { label: 'Consultation', data: generateFallbackTrend(12, 8) },
+                                { label: 'Check up', data: generateFallbackTrend(12, 6) },
+                                { label: 'Immunization', data: generateFallbackTrend(12, 4) },
+                            ]
+                        },
+                        funnel: { labels: ['Requested','Approved','Scheduled','Completed'], data: [5,4,3,2], avgApprovalHours: 6, avgWaitDays: 2 },
+                        outcomes: { labels: ['Completed','No-show','Cancelled','Reschedule Requested'], data: [10,2,1,1] },
+                        avgVisitsPerResident: { value: 1.5, trend: generateFallbackTrend(12, 2) },
+                        inventory: {
+                            categories: ['medication','medical-supplies','fluids','equipment','other'],
+                            byCategory: [10,8,2,4,3],
+                            dosByCategory: [30,20,45,60,25],
+                            stockRiskCounts: { low: 5, critical: 3, out: 2, expired: 1 }
+                        },
+                        handlingTime: { trend: generateFallbackTrend(12, 4) }
+                    }
+                };
+            }
+        }
+
+        // Fetch current online users and update pill
+        async function refreshOnlineNow() {
+            try {
+                const res = await fetch('/admin/api/analytics/users-online-now');
+                if (!res.ok) throw new Error('Failed fetching online-now');
+                const data = await res.json();
+                const el = document.getElementById('online-now-count');
+                if (el) el.textContent = toCount(data.count);
+            } catch (e) {
+                const el = document.getElementById('online-now-count');
+                if (el) el.textContent = '—';
+            }
+        }
+
+        function generateFallbackTrend(length, baseValue) {
+            const trend = [];
+            for (let i = 0; i < length; i++) {
+                trend.push(Math.max(0, Math.floor(baseValue * (0.5 + Math.random() * 0.8))));
+            }
+            return trend;
+        }
+
+        // Generate a plausible online-users trend from active user count
+        function generateOnlineFallbackTrend(length, activeBase) {
+            const arr = [];
+            for (let i = 0; i < length; i++) {
+                const factor = 0.3 + Math.random() * 0.5; // 30% - 80% of active users
+                arr.push(Math.max(0, Math.floor((activeBase || 0) * factor)));
+            }
+            return arr;
+        }
+
+        // Simple linear regression prediction for next value
+        function predictNextLR(series) {
+            const y = (series || []).filter(v => Number.isFinite(v));
+            const n = y.length;
+            if (n === 0) return 0;
+            if (n === 1) return Math.max(0, Math.round(y[0]));
+            let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+            for (let i = 0; i < n; i++) {
+                const x = i + 1;
+                const yi = y[i];
+                sumX += x; sumY += yi; sumXY += x * yi; sumXX += x * x;
+            }
+            const denom = n * sumXX - sumX * sumX;
+            const slope = denom !== 0 ? (n * sumXY - sumX * sumY) / denom : 0;
+            const intercept = (sumY - slope * sumX) / n;
+            const nextX = n + 1;
+            const pred = intercept + slope * nextX;
+            return Math.max(0, Math.round(pred));
+        }
+
+        // Lightweight toast for click feedback
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                z-index: 10000;
+                padding: 0.6rem 0.8rem;
+                background: #eef2ff;
+                border: 1px solid #c7d2fe;
+                border-radius: 8px;
+                color: #3730a3;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                font-size: 0.9rem;
+                max-width: 60vw;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 2500);
+        }
+
+        // Make a chart clickable and emit details; clicking toggles visibility
+        function makeChartClickable(chart, chartName) {
+            if (!chart || !chart.canvas) return;
+            const canvas = chart.canvas;
+            canvas.style.cursor = 'pointer';
+            canvas.addEventListener('click', function(evt) {
+                try {
+                    const mode = chart.config && chart.config.type === 'bar' ? 'nearest' : 'nearest';
+                    const points = chart.getElementsAtEventForMode(evt, mode, { intersect: true }, true) || [];
+                    if (!points.length) return;
+                    const p = points[0];
+                    const idx = p.index;
+                    const dsi = p.datasetIndex;
+                    const labels = (chart.data && chart.data.labels) || [];
+                    const datasets = (chart.data && chart.data.datasets) || [];
+                    const label = labels[idx];
+                    const ds = datasets[dsi] || {};
+                    const series = ds.label || '';
+                    let raw = ds.data ? ds.data[idx] : undefined;
+                    if (raw && typeof raw === 'object') {
+                        raw = ('y' in raw) ? raw.y : ('x' in raw ? raw.x : raw);
+                    }
+                    const valueNum = Number(raw);
+                    const value = Number.isFinite(valueNum) ? valueNum.toLocaleString() : (raw ?? '');
+
+                    // Toggle visibility depending on chart type
+                    const type = (chart.config && chart.config.type) || '';
+                    let toggled = false;
+                    let nowVisible = true;
+                    if (type === 'pie' || type === 'doughnut') {
+                        try {
+                            if (typeof chart.getDataVisibility === 'function' && typeof chart.toggleDataVisibility === 'function') {
+                                const wasVisible = chart.getDataVisibility(idx);
+                                chart.toggleDataVisibility(idx);
+                                chart.update();
+                                toggled = true;
+                                nowVisible = !wasVisible;
+                            }
+                        } catch(_) { /* ignore */ }
+                    } else {
+                        try {
+                            if (typeof chart.isDatasetVisible === 'function' && typeof chart.setDatasetVisibility === 'function') {
+                                const wasVisible = chart.isDatasetVisible(dsi);
+                                chart.setDatasetVisibility(dsi, !wasVisible);
+                                chart.update();
+                                toggled = true;
+                                nowVisible = !wasVisible;
+                            }
+                        } catch(_) { /* ignore */ }
+                    }
+                    // Emit a custom event for future drill-down hooks
+                    window.dispatchEvent(new CustomEvent('chart-click', {
+                        detail: { chartName, index: idx, datasetIndex: dsi, label, series, value: valueNum }
+                    }));
+                    // User feedback
+                    const parts = [chartName];
+                    if (label) parts.push(`Label: ${label}`);
+                    if (series) parts.push(`Series: ${series}`);
+                    if (value !== '') parts.push(`Value: ${value}`);
+                    if (toggled) parts.push(nowVisible ? 'Shown' : 'Hidden');
+                    showToast(parts.join(' — '));
+                } catch (e) {
+                    // no-op
+                }
+            });
+        }
+
+        async function renderCharts(filterState) {
+            // Show loading state
+            showLoadingState();
+            hideFilterStatus();
+            
+            const analyticsData = await fetchAnalyticsData(filterState);
+            const data = analyticsData.chartData;
+            
+            // Update statistics display
+            updateStatisticsDisplay(analyticsData.statistics);
+            
+            // Show success indicator
+            showFilterStatus();
+            
+            const animationOptions = {
+                duration: 1500,
+                easing: 'easeInOutQuart',
+                loop: false
+            };
+            // Appointments by Status
+            if (chartStatus) chartStatus.destroy();
+            chartStatus = new Chart(document.getElementById('chartStatus').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pending', 'Scheduled', 'Completed'],
+                    datasets: [{
+                        data: data.appointmentsStatus,
+                        backgroundColor: ['#ed8936', '#4299e1', '#48bb78'],
+                        cutout: '55%'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        
+                    },
+                    animation: animationOptions
+                }
+            });
+            makeChartClickable(chartStatus, 'Appointments by Status');
+            
+            // Expiry Chart (daily actuals only; no predicted series)
+            if (chartExpiryPred) chartExpiryPred.destroy();
+            const reqExpiredBuckets = (analyticsData.chartData && analyticsData.chartData.scheduleRequestsExpiring && analyticsData.chartData.scheduleRequestsExpiring.buckets) || [];
+            const reqDueBuckets = (analyticsData.chartData && analyticsData.chartData.scheduleRequestsDue && analyticsData.chartData.scheduleRequestsDue.buckets) || [];
+            const invDueBuckets = (analyticsData.chartData && analyticsData.chartData.inventoryItemsExpiring && analyticsData.chartData.inventoryItemsExpiring.buckets) || [];
+            const maxLen = Math.max(reqExpiredBuckets.length, reqDueBuckets.length, invDueBuckets.length);
+            const providedLabels = (analyticsData.chartData && analyticsData.chartData.scheduleRequestsDue && analyticsData.chartData.scheduleRequestsDue.labels) || [];
+            const labels = providedLabels.length === maxLen
+                ? providedLabels
+                : Array.from({ length: maxLen }, (_, i) => `Day ${i + 1}`);
+
+            if (maxLen) {
+                chartExpiryPred = new Chart(document.getElementById('chartExpiryPredictions').getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: 'Requests Due (daily)',
+                                data: reqDueBuckets,
+                                borderColor: '#f59e0b',
+                                backgroundColor: 'rgba(245,158,11,0.08)',
+                                fill: false,
+                                borderDash: [6,4],
+                                tension: 0.3
+                            },
+                            {
+                                label: 'Inventory Due (daily)',
+                                data: invDueBuckets,
+                                borderColor: '#4299e1',
+                                backgroundColor: 'rgba(66,153,225,0.08)',
+                                fill: false,
+                                tension: 0.3
+                            },
+                            {
+                                label: 'Requests Expired (daily)',
+                                data: reqExpiredBuckets,
+                                borderColor: '#ef4444',
+                                backgroundColor: 'rgba(239,68,68,0.08)',
+                                fill: false,
+                                tension: 0.3
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { position: 'bottom' } },
+                        scales: {
+                            x: { title: { display: true, text: 'Day' } },
+                            y: { beginAtZero: true, ticks: { stepSize: 1 }, title: { display: true, text: 'Daily count' } }
+                        }
+                    }
+                });
+                makeChartClickable(chartExpiryPred, 'Expiry (Daily)');
+            }
+
+            // Appointments by Type (Trend) as Bar Chart
+            if (chartApptTypes) chartApptTypes.destroy();
+            const apptTypes = data.appointmentsByTypeTrend || { labels: [], series: [] };
+            const typeColors = ['#4C3BCF','#4299e1','#48bb78','#ed8936','#ef4444','#a78bfa','#22d3ee'];
+            chartApptTypes = new Chart(document.getElementById('chartApptTypes').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: apptTypes.labels || [],
+                    datasets: (apptTypes.series || []).map((s, idx) => ({
+                        label: s.label,
+                        data: s.data || [],
+                        borderColor: typeColors[idx % typeColors.length],
+                        backgroundColor: `${typeColors[idx % typeColors.length]}55`,
+                        borderWidth: 1,
+                        maxBarThickness: 24
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: {
+                        x: { stacked: false, title: { display: true, text: 'Period' } },
+                        y: { beginAtZero: true, ticks: { stepSize: 1 }, title: { display: true, text: 'Count' } }
+                    },
+                    animation: animationOptions
+                }
+            });
+            makeChartClickable(chartApptTypes, 'Appointments by Type (Trend)');
+
+            // Funnel: Requested -> Completed
+            if (chartFunnel) chartFunnel.destroy();
+            const funnel = data.funnel || { labels: [], data: [] };
+            chartFunnel = new Chart(document.getElementById('chartFunnel').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: funnel.labels || ['Requested','Approved','Scheduled','Completed'],
+                    datasets: [{
+                        data: funnel.data || [],
+                        backgroundColor: ['#94a3b8','#60a5fa','#34d399','#10b981'],
+                        cutout: '55%'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        
+                    },
+                    animation: animationOptions
+                }
+            });
+            makeChartClickable(chartFunnel, 'Funnel: Requested → Completed');
+
+            
+
+            // Stock Risk Breakdown (Low removed; Expired shown in yellow)
+            if (chartStockRisk) chartStockRisk.destroy();
+            const stockRisk = (data.inventory && data.inventory.stockRiskCounts) || { critical: 0, out: 0, expired: 0 };
+            chartStockRisk = new Chart(document.getElementById('chartStockRisk').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Critical','Out','Expired'],
+                    datasets: [{
+                        data: [toCount(stockRisk.critical), toCount(stockRisk.out), toCount(stockRisk.expired)],
+                        backgroundColor: ['#ef4444', '#9ca3af', '#f59e0b'],
+                        cutout: '55%'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        
+                    },
+                    animation: animationOptions
+                }
+            });
+            makeChartClickable(chartStockRisk, 'Stock Risk Breakdown');
+
+            // DOS by Category
+            if (chartDOS) chartDOS.destroy();
+            const inv = data.inventory || { categories: [], dosByCategory: [] };
+            chartDOS = new Chart(document.getElementById('chartDOS').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: inv.categories || [],
+                    datasets: [{
+                        label: 'Days of Supply',
+                        data: inv.dosByCategory || [],
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34,197,94,0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    plugins: { legend: { position: 'bottom' } }, 
+                    scales: { 
+                        x: { title: { display: true, text: 'Category' } },
+                        y: { beginAtZero: true, title: { display: true, text: 'Days' } } 
+                    }, 
+                    animation: animationOptions 
+                }
+            });
+            makeChartClickable(chartDOS, 'DOS by Category');
+
+            // Users Online Time is rendered separately by its own filter
+        }
+
+        // Update the "as of" timestamp for Expiry (Daily) using PH time
+        function refreshExpiryAsOf() {
+            const el = document.getElementById('expiry-asof');
+            if (!el) return;
+            const asOf = new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila', dateStyle: 'medium', timeStyle: 'short' });
+            el.textContent = `— as of ${asOf}`;
+        }
+
+    async function renderUsersOnlineChart(filterState) {
+            // Fetch data specific to the selected period for users online chart
+            const analyticsData = await fetchAnalyticsData(filterState);
+            const data = analyticsData.chartData;
+
+            if (chartUsers) chartUsers.destroy();
+            const userLabels = getUserLabelsForPeriod(filterState);
+            const usersOnlineSeries = (data.usersOnlineTrend && data.usersOnlineTrend.length)
+                ? data.usersOnlineTrend
+                : (data.usersTrend && data.usersTrend.length)
+                    ? data.usersTrend
+                    : generateOnlineFallbackTrend(userLabels.length, analyticsData.statistics.activeUsers || 0);
+
+            chartUsers = new Chart(document.getElementById('chartUsers').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: userLabels,
+                    datasets: [{
+                        label: 'Online Users',
+                        data: usersOnlineSeries,
+                        borderColor: '#4C3BCF',
+                        backgroundColor: 'rgba(76,59,207,0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { title: { display: true, text: 'Time' } },
+                        y: { beginAtZero: true, ticks: { stepSize: 1 }, title: { display: true, text: 'Users' } }
+                    }
+                }
+            });
+            makeChartClickable(chartUsers, 'Users Online');
+
+        }
+        
+        // Reset all chart visibility to default (show everything)
+        function resetChartVisibility(chart) {
+            if (!chart) return;
+            const type = (chart.config && chart.config.type) || '';
+            try {
+                if (type === 'pie' || type === 'doughnut') {
+                    const labels = (chart.data && chart.data.labels) || [];
+                    for (let i = 0; i < labels.length; i++) {
+                        if (typeof chart.getDataVisibility === 'function') {
+                            const vis = chart.getDataVisibility(i);
+                            if (!vis && typeof chart.toggleDataVisibility === 'function') {
+                                chart.toggleDataVisibility(i);
+                            }
+                        }
+                    }
+                    chart.update();
+                } else {
+                    const dsets = (chart.data && chart.data.datasets) || [];
+                    for (let di = 0; di < dsets.length; di++) {
+                        if (typeof chart.isDatasetVisible === 'function' && typeof chart.setDatasetVisibility === 'function') {
+                            const vis = chart.isDatasetVisible(di);
+                            if (!vis) chart.setDatasetVisibility(di, true);
+                        }
+                    }
+                    chart.update();
+                }
+            } catch (_) { /* ignore */ }
+        }
+
+        function resetAllChartsVisibility() {
+            [chartStatus, chartUsers, chartExpiryPred, chartApptTypes, chartFunnel, chartStockRisk, chartDOS].forEach(resetChartVisibility);
+            showToast('All charts reset to visible');
+        }
+        
+
+        function updateStatisticsDisplay(statistics) {
+            const statCards = document.querySelectorAll('.stat-card .stat-number');
+            if (statCards.length >= 4) {
+                statCards[0].textContent = statistics.totalUsers || '—';
+                statCards[1].textContent = statistics.activeUsers || '—';
+                statCards[2].textContent = statistics.totalAppointments || '—';
+                statCards[3].textContent = statistics.pending || '—';
+            }
+        }
+
+        function showLoadingState() {
+            const statCards = document.querySelectorAll('.stat-card .stat-number');
+            statCards.forEach(card => {
+                card.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            });
+        }
+
+        function hideLoadingState() {
+            // Loading state will be hidden when statistics are updated
+        }
+
+        
+
+        function getUserLabelsForPeriod(filterState) {
+            const mode = typeof filterState === 'string' ? filterState : filterState.mode;
+            const now = new Date();
+            if (mode === 'today' || mode === 'date') {
+                return Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2,'0')}:00`);
+            } else if (mode === 'month' || mode === 'this-month') {
+                return ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+            } else if (mode === 'year' || mode === 'this-year') {
+                return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            } else if (mode === 'range') {
+                // Choose granularity based on range length
+                const start = new Date(filterState.start);
+                const end = new Date(filterState.end);
+                const diffMs = Math.max(0, end - start);
+                const diffHours = diffMs / 3600000;
+                const diffDays = diffMs / 86400000;
+                if (diffHours <= 24) {
+                    return Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2,'0')}:00`);
+                } else if (diffDays <= 31) {
+                    const days = Math.ceil(diffDays);
+                    return Array.from({ length: Math.min(31, days) }, (_, i) => `D${i+1}`);
+                } else {
+                    return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                }
+            }
+            // default
+            return ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+        }
+
+    // Filter state helpers
+    function getFilterStateFromUI() {
+        const sel = document.getElementById('analytics-filter').value;
+        if (sel === 'today' || sel === 'this-month' || sel === 'this-year') {
+            return { mode: sel };
+        }
+        if (sel === 'date') {
+            return { mode: 'date', date: document.getElementById('filter-date').value };
+        }
+        if (sel === 'month') {
+            return { mode: 'month', month: document.getElementById('filter-month').value };
+        }
+        if (sel === 'year') {
+            return { mode: 'year', year: document.getElementById('filter-year').value };
+        }
+        if (sel === 'range') {
+            return { mode: 'range', start: document.getElementById('filter-start').value, end: document.getElementById('filter-end').value };
+        }
+        return { mode: 'this-month' };
+    }
+
+    function updateFilterInputsVisibility() {
+        const sel = document.getElementById('analytics-filter').value;
+        const dateEl = document.getElementById('filter-date');
+        const monthEl = document.getElementById('filter-month');
+        const yearEl = document.getElementById('filter-year');
+        const startEl = document.getElementById('filter-start');
+        const endEl = document.getElementById('filter-end');
+        const toEl = document.getElementById('filter-to');
+        const applyBtn = document.getElementById('apply-filter');
+
+        // Hide all by default inside the controls wrap
+        [dateEl, monthEl, yearEl, startEl, endEl, toEl, applyBtn].forEach(el => { if (el) el.style.display = 'none'; });
+
+        // Show only the relevant inputs so Apply stays close to active control
+        if (sel === 'date') { dateEl.style.display = 'inline-block'; applyBtn.style.display = 'inline-block'; }
+        if (sel === 'month') { monthEl.style.display = 'inline-block'; applyBtn.style.display = 'inline-block'; }
+        if (sel === 'year') { yearEl.style.display = 'inline-block'; applyBtn.style.display = 'inline-block'; }
+        if (sel === 'range') { startEl.style.display = 'inline-block'; toEl.style.display = 'inline-block'; endEl.style.display = 'inline-block'; applyBtn.style.display = 'inline-block'; }
+    }
+
+    function ensureDefaults() {
+        // Pre-fill inputs with reasonable defaults
+        const now = new Date();
+        const dateEl = document.getElementById('filter-date');
+        const monthEl = document.getElementById('filter-month');
+        const yearEl = document.getElementById('filter-year');
+        const startEl = document.getElementById('filter-start');
+        const endEl = document.getElementById('filter-end');
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth()+1).padStart(2,'0');
+        const dd = String(now.getDate()).padStart(2,'0');
+    if (dateEl && !dateEl.value) dateEl.value = `${yyyy}-${mm}-${dd}`;
+        if (monthEl && !monthEl.value) monthEl.value = `${yyyy}-${mm}`;
+        if (yearEl && !yearEl.value) yearEl.value = String(yyyy);
+        if (startEl && !startEl.value) {
+            const start = new Date(now.getTime() - 6*3600000); // last 6 hours
+            startEl.value = start.toISOString().slice(0,16);
+        }
+        if (endEl && !endEl.value) endEl.value = now.toISOString().slice(0,16);
+    }
+
+    // Initial render with current month
+    ensureDefaults();
+    updateFilterInputsVisibility();
+    const initialState = { mode: 'this-month' };
+    renderCharts(initialState);
+    renderUsersOnlineChart(initialState);
+    refreshExpiryAsOf();
+    refreshOnlineNow();
+        
+        // Add filter status indicator
+        console.log('Analytics filter functionality loaded successfully');
+        
+        document.getElementById('analytics-filter').addEventListener('change', async function(e) {
+            const sel = e.target;
+            updateFilterInputsVisibility();
+            ensureDefaults();
+            const state = getFilterStateFromUI();
+            // For presets (today/this-month/this-year) we can auto-apply
+            if (state.mode === 'today' || state.mode === 'this-month' || state.mode === 'this-year') {
+                try {
+                    sel.disabled = true;
+                    await renderCharts(state);
+                    await renderUsersOnlineChart(state);
+                } catch (error) {
+                    console.error('Error rendering charts:', error);
+                    showErrorMessage('Failed to update analytics data. Please try again.');
+                } finally {
+                    sel.disabled = false;
+                }
+            }
+        });
+
+    // Apply button handler for parameterized modes
+        document.getElementById('apply-filter').addEventListener('click', async function() {
+            const state = getFilterStateFromUI();
+            // Basic validation
+            if (state.mode === 'date' && !state.date) return showErrorMessage('Please select a date.');
+            if (state.mode === 'month' && !state.month) return showErrorMessage('Please select a month.');
+            if (state.mode === 'year' && !state.year) return showErrorMessage('Please enter a year.');
+            if (state.mode === 'range' && (!state.start || !state.end)) return showErrorMessage('Please select start and end date/time.');
+            try {
+                this.disabled = true;
+                await renderCharts(state);
+                await renderUsersOnlineChart(state);
+            } catch (error) {
+                console.error('Error applying filter:', error);
+                showErrorMessage('Failed to apply filter.');
+            } finally {
+                this.disabled = false;
+            }
+        });
+
+        // Users Online uses the main filter; no separate handler needed
+
+        // Reset visibility handler
+        const resetBtn = document.getElementById('reset-visibility');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function() {
+                resetAllChartsVisibility();
+                // Provide visual hover feedback on click
+                resetBtn.classList.add('hovered');
+                setTimeout(() => {
+                    resetBtn.classList.remove('hovered');
+                }, 400);
+            });
+        }
+
+        // Periodically refresh current online count
+    setInterval(refreshOnlineNow, 60000);
+    setInterval(refreshExpiryAsOf, 60000);
+
+        function showErrorMessage(message) {
+            // Create and show a temporary error message
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'alert alert-danger';
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 10000;
+                padding: 1rem;
+                background: #fed7d7;
+                border: 1px solid #feb2b2;
+                border-radius: 8px;
+                color: #c53030;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            `;
+            errorDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+            
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                if (errorDiv.parentNode) {
+                    errorDiv.parentNode.removeChild(errorDiv);
+                }
+            }, 5000);
+        }
+
+        function showFilterStatus() {
+            const status = document.getElementById('filter-status');
+            if (status) {
+                status.style.visibility = 'visible';
+                setTimeout(() => {
+                    status.style.visibility = 'hidden';
+                }, 2000);
+            }
+        }
+
+        function hideFilterStatus() {
+            const status = document.getElementById('filter-status');
+            if (status) {
+                status.style.visibility = 'hidden';
+            }
+        }
+    </script>
+</body>
+</html>

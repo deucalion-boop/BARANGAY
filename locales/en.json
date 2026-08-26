@@ -1,0 +1,42 @@
+{
+  "lang": {
+    "english": "English",
+    "tagalog": "Tagalog"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "analytics": "Analytics",
+    "residents": "Residents",
+    "residentRequests": "Resident Requests",
+    "schedule": "Schedule",
+    "announcements": "Announcements",
+    "inventory": "Inventory",
+    "settings": "Settings"
+  },
+  "settings": {
+    "systemSettings": "System Settings",
+    "logout": "Logout",
+    "general": {
+      "title": "General Settings",
+      "siteTagline": "Site Tagline",
+      "siteDescription": "Site Description",
+      "defaultLanguage": "Default Language",
+      "save": "Save General Settings"
+    },
+    "systemConfig": {
+      "title": "System Configuration",
+      "userRegistration": "User Registration",
+      "userRegistrationDesc": "Allow new users to register for accounts",
+      "scheduleExpiryDays": "Schedule Request Expiry (Days)",
+      "scheduleExpiryHelp": "Number of days after which pending schedule requests will automatically expire and be removed from the admin queue.",
+      "stats": {
+        "totalPending": "Total Pending",
+        "nearExpiry": "Near Expiry",
+        "totalExpired": "Total Expired"
+      },
+      "refreshStats": "Refresh Stats",
+      "expireNow": "Expire Old Requests Now",
+      "update": "Update Configuration"
+    }
+  }
+}

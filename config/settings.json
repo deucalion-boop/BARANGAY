@@ -1,0 +1,9 @@
+{
+  "emailNotifications": true,
+  "scheduleExpiryDays": 4,
+  "allowUserRegistration": true,
+  "siteTagline": "Serving Our Community",
+  "siteDescription": "Welcome to our Barangay Health Center management system. We provide comprehensive healthcare services to our community.",
+  "language": "fil",
+  "emailVerboseLogging": false
+}

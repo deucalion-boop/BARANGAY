@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Center - Settings</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <style>
+        /* Settings specific styles */
+        .settings-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            gap: 1.5rem;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 0 1.5rem;
+        }
+
+        .settings-section {
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .settings-section:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Center a single settings section nicely */
+        .settings-section.settings-centered {
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+        }
+
+        .section-header {
+            padding: 1.5rem 2rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: var(--white);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section-header h3 {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .section-header .section-icon {
+            font-size: 1.5rem;
+        }
+
+        .section-content {
+            padding: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.875rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            background: var(--white);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(28, 74, 202, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .switch-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .switch-info {
+            flex: 1;
+        }
+
+        .switch-info h4 {
+            margin: 0 0 0.25rem 0;
+            color: var(--text-dark);
+            font-size: 1rem;
+        }
+
+        .switch-info p {
+            margin: 0;
+            color: var(--text-light);
+            font-size: 0.875rem;
+        }
+
+        /* Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e0;
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.875rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(28, 74, 202, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--white);
+            color: var(--text-dark);
+            border: 2px solid #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            background: #f8fafc;
+            border-color: var(--primary-color);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger-color), #e53e3e);
+            color: var(--white);
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 101, 101, 0.3);
+        }
+
+        /* Small alignment tweaks */
+        .header .user-info { gap: 0.5rem; }
+        .logout-btn { margin-left: 8px; }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        /* Alert Messages */
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .alert-success {
+            background: #f0fff4;
+            color: var(--success-color);
+            border: 1px solid #9ae6b4;
+        }
+
+        .alert-warning {
+            background: #fffbeb;
+            color: var(--warning-color);
+            border: 1px solid #fbd38d;
+        }
+
+        .alert-info {
+            background: #ebf8ff;
+            color: var(--primary-color);
+            border: 1px solid #90cdf4;
+        }
+
+        /* Backup Section */
+        .backup-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        }
+
+        .backup-info h5 {
+            margin: 0 0 0.25rem 0;
+            color: var(--text-dark);
+        }
+
+        .backup-info p {
+            margin: 0;
+            color: var(--text-light);
+            font-size: 0.875rem;
+        }
+
+        .backup-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        /* Security Section */
+        .security-log {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            background: #f8fafc;
+        }
+
+        .log-entry {
+            padding: 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-status {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .log-status.success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .log-status.warning {
+            background: #fef5e7;
+            color: #c05621;
+        }
+
+        .log-status.error {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        /* Toast notifications (top-right popup) */
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            z-index: 2000;
+            pointer-events: none;
+        }
+        .toast {
+            min-width: 280px;
+            max-width: 380px;
+            background: var(--white);
+            color: var(--text-dark);
+            border-radius: 10px;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+            border-left: 6px solid var(--primary-color);
+            padding: 0.875rem 1rem;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: 0.75rem;
+            transform: translateX(120%);
+            opacity: 0;
+            animation: toast-slide-in 0.35s ease forwards;
+            pointer-events: auto;
+        }
+        .toast.success { border-left-color: var(--success-color); }
+        .toast.warning { border-left-color: var(--warning-color); }
+        .toast.info { border-left-color: var(--primary-color); }
+        .toast .toast-icon { font-size: 1.1rem; }
+        .toast.success .toast-icon { color: var(--success-color); }
+        .toast.warning .toast-icon { color: var(--warning-color); }
+        .toast.info .toast-icon { color: var(--primary-color); }
+        .toast .toast-message { font-size: 0.95rem; line-height: 1.25rem; }
+        .toast .toast-close {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 6px;
+        }
+        .toast .toast-close:hover { color: #475569; background: #f1f5f9; }
+        .toast.hide { animation: toast-slide-out 0.25s ease forwards; }
+        @keyframes toast-slide-in { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes toast-slide-out { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .settings-container { grid-template-columns: 1fr; max-width: 100%; margin: 0; }
+            /* Remove right shift on small screens for proper alignment */
+            .settings-section.settings-centered { left: 0; }
+            .form-row,
+            .form-row-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                justify-content: stretch;
+                flex-direction: column;
+            }
+
+            .backup-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .backup-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" role="navigation" aria-label="Admin navigation">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-cog"></i><span>Admin Panel</span></h2>
+                <button class="toggle-btn" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/admin/dashboard" data-tooltip="Dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+                <li><a href="/admin/analytics" data-tooltip="Analytics"><i class="fas fa-chart-bar"></i><span>Analytics</span></a></li>
+                <li><a href="/admin/residents" data-tooltip="Residents"><i class="fas fa-users"></i><span>Residents</span></a></li>
+                <li><a href="/admin/requests/residents" data-tooltip="Resident Requests"><i class="fas fa-user-clock"></i><span>Resident Requests</span></a></li>
+                <li><a href="/admin/schedule" data-tooltip="Schedule"><i class="fas fa-calendar-alt"></i><span>Schedule</span></a></li>
+                <li><a href="/admin/announcements" data-tooltip="Announcements"><i class="fas fa-bullhorn"></i><span>Announcements</span></a></li>
+                <li><a href="/admin/inventory" data-tooltip="Inventory"><i class="fas fa-inbox"></i><span>Inventory</span></a></li>
+                <li><a href="/admin/settings" class="active" data-tooltip="Settings"><i class="fas fa-cog"></i><span>Settings</span></a></li>
+            </ul>
+        </aside>
+
+        <div class="overlay"></div>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <h1>System Settings</h1>
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <%= username.charAt(0).toUpperCase() %>
+                    </div>
+                    <span>Welcome, <%= username %> (<%= admin.role %>)</span>
+                    <button class="logout-btn" id="logout-btn" type="button"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                </div>
+            </header>
+
+            <!-- Settings Content -->
+            <div class="content">
+                <div class="settings-container">
+
+                    <!-- General Settings -->
+                    <div class="settings-section settings-centered">
+                        <div class="section-header">
+                            <h3><i class="section-icon fas fa-sliders-h"></i> General Settings</h3>
+                        </div>
+                        <div class="section-content">
+                            <form id="general-settings-form">
+                                <div class="form-group">
+                                    <label for="site-tagline">Site Tagline</label>
+                                    <input type="text" id="site-tagline" name="siteTagline" value="<%= (settings && settings.siteTagline) ? settings.siteTagline : '' %>" placeholder="Serving Our Community">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="site-description">Site Description</label>
+                                    <textarea id="site-description" name="siteDescription" rows="3" placeholder="Short description shown in meta and some pages..."><%= (settings && settings.siteDescription) ? settings.siteDescription : '' %></textarea>
+                                </div>
+
+                                <!-- Language selection removed per request -->
+
+                                <div class="action-buttons">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Save General Settings
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- System Configuration -->
+                    <div class="settings-section settings-centered">
+                        <div class="section-header">
+                            <h3><i class="section-icon fas fa-cogs"></i> System Configuration</h3>
+                        </div>
+                        <div class="section-content">
+                            
+                            <div class="switch-group">
+                                <div class="switch-info">
+                                    <h4>User Registration</h4>
+                                    <p>Allow new users to register for accounts</p>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="user-registration" <%= (settings && settings.allowUserRegistration !== false) ? 'checked' : '' %>>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+
+                            
+
+                            <form id="system-config-form">
+                                <div class="form-group">
+                                    <label for="schedule-expiry">Schedule Request Expiry (Days)</label>
+                                    <input type="number" id="schedule-expiry" name="scheduleExpiry" value="<%= (settings && settings.scheduleExpiryDays) ? settings.scheduleExpiryDays : 3 %>" min="1" max="30">
+                                    <small style="color: var(--text-light); font-size: 0.875rem; margin-top: 0.25rem; display: block;">
+                                        Number of days after which pending schedule requests will automatically expire and be removed from the admin queue.
+                                    </small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label><i class="fas fa-chart-line"></i> Schedule Request Statistics</label>
+                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem;">
+                                        <div id="expiry-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                                            <div style="text-align: center;">
+                                                <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color);" id="pending-count">-</div>
+                                                <div style="font-size: 0.8rem; color: var(--text-light);">Total Pending</div>
+                                            </div>
+                                            <div style="text-align: center;">
+                                                <div style="font-size: 1.5rem; font-weight: bold; color: var(--warning-color);" id="near-expiry-count">-</div>
+                                                <div style="font-size: 0.8rem; color: var(--text-light);">Near Expiry</div>
+                                            </div>
+                                            <div style="text-align: center;">
+                                                <div style="font-size: 1.5rem; font-weight: bold; color: var(--secondary-color);" id="expired-count">-</div>
+                                                <div style="font-size: 0.8rem; color: var(--text-light);">Total Expired</div>
+                                            </div>
+                                        </div>
+                                        <div style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: center;">
+                                            <button type="button" class="btn btn-secondary btn-small" id="refresh-stats">
+                                                <i class="fas fa-sync-alt"></i> Refresh Stats
+                                            </button>
+                                            <button type="button" class="btn btn-warning btn-small" id="expire-now">
+                                                <i class="fas fa-clock"></i> Expire Old Requests Now
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="action-buttons">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Update Configuration
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    
+
+                    <!-- System Information removed per request -->
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Include admin.js for sidebar functionality -->
+    <script src="/js/admin.js"></script>
+    <script>
+        // Settings page specific JavaScript
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fix logout: navigate to admin logout route
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', () => {
+                    if (!confirm('Are you sure you want to logout?')) return;
+                    fetch('/admin/logout', { method: 'POST' })
+                        .then(r => r.json())
+                        .then(d => { window.location.href = '/'; })
+                        .catch(() => { window.location.href = '/'; });
+                });
+            }
+            // General Settings handler
+            const generalForm = document.getElementById('general-settings-form');
+            if (generalForm) {
+                generalForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    const submitButton = this.querySelector('button[type="submit"]');
+                    const originalText = submitButton.innerHTML;
+                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                    submitButton.disabled = true;
+
+                    try {
+                        const payload = {
+                            settingType: 'system-config',
+                            siteTagline: document.getElementById('site-tagline').value,
+                            siteDescription: document.getElementById('site-description').value
+                        };
+
+                        const res = await fetch('/admin/api/settings/update', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const data = await res.json();
+                        if (data.success) {
+                            showToast(data.message || 'General settings updated successfully.', 'success');
+                        } else {
+                            showToast(data.error || 'Failed to update general settings', 'warning');
+                        }
+                    } catch (err) {
+                        console.error('Failed to update general settings:', err);
+                        showToast('Failed to update general settings. Please try again.', 'warning');
+                    } finally {
+                        submitButton.innerHTML = originalText;
+                        submitButton.disabled = false;
+                    }
+                });
+            }
+
+            document.getElementById('system-config-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const scheduleExpiry = document.getElementById('schedule-expiry').value;
+                const submitButton = this.querySelector('button[type="submit"]');
+                
+                // Show loading state
+                const originalText = submitButton.innerHTML;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+                submitButton.disabled = true;
+                
+                try {
+                    const response = await fetch('/admin/api/settings/update', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            settingType: 'system-config',
+                            scheduleExpiry: scheduleExpiry
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        showToast(data.message || 'Configuration updated successfully.', 'success');
+                    } else {
+                        showToast(data.error || 'Failed to update settings', 'warning');
+                    }
+                } catch (error) {
+                    console.error('Error updating settings:', error);
+                    showToast('Failed to update settings. Please try again.', 'warning');
+                } finally {
+                    // Restore button state
+                    submitButton.innerHTML = originalText;
+                    submitButton.disabled = false;
+                }
+            });
+
+            // Toggle user registration on/off
+            const userRegCheckbox = document.getElementById('user-registration');
+            if (userRegCheckbox) {
+                userRegCheckbox.addEventListener('change', async function() {
+                    const enabled = this.checked;
+                    try {
+                        const res = await fetch('/admin/api/settings/update', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ settingType: 'system-config', userRegistration: enabled })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            showToast(`User registration ${enabled ? 'enabled' : 'disabled'} successfully.`, 'success');
+                        } else {
+                            showToast(data.error || 'Failed to update user registration setting', 'warning');
+                            // revert UI if failed
+                            this.checked = !enabled;
+                        }
+                    } catch (err) {
+                        console.error('Failed to update user registration setting:', err);
+                        showToast('Failed to update user registration setting.', 'warning');
+                        this.checked = !enabled;
+                    }
+                });
+            }
+
+            // Removed: email configuration, backup/restore, and security settings handlers
+
+            // Schedule expiry statistics functions
+            async function loadExpiryStats() {
+                try {
+                    const response = await fetch('/admin/api/schedule/expiry-stats');
+                    const data = await response.json();
+                    
+                    if (data.success && data.stats) {
+                        document.getElementById('pending-count').textContent = data.stats.totalPending || 0;
+                        document.getElementById('near-expiry-count').textContent = data.stats.nearExpiry || 0;
+                        document.getElementById('expired-count').textContent = data.stats.totalExpired || 0;
+                    }
+                } catch (error) {
+                    console.error('Error loading expiry stats:', error);
+                }
+            }
+
+            // Manual expiry function
+            async function expireOldRequests() {
+                const button = document.getElementById('expire-now');
+                const originalText = button.innerHTML;
+                
+                try {
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                    button.disabled = true;
+                    
+                    const response = await fetch('/admin/api/schedule/expire-old', {
+                        method: 'POST'
+                    });
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        showToast(`${data.message} (${data.expiredCount || 0} requests processed)`, 'success');
+                        loadExpiryStats(); // Refresh stats
+                    } else {
+                        showToast(data.error || 'Failed to expire old requests', 'warning');
+                    }
+                } catch (error) {
+                    console.error('Error expiring old requests:', error);
+                    showToast('Failed to expire old requests. Please try again.', 'warning');
+                } finally {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            }
+
+            // Event listeners for expiry management
+            document.getElementById('refresh-stats').addEventListener('click', loadExpiryStats);
+            document.getElementById('expire-now').addEventListener('click', expireOldRequests);
+            
+            // Load stats on page load
+            loadExpiryStats();
+
+            // Toast helper: animated popup at top-right
+            function showToast(message, type = 'success') {
+                let container = document.querySelector('.toast-container');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.className = 'toast-container';
+                    document.body.appendChild(container);
+                }
+
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                const icon = type === 'success' ? 'check-circle' : (type === 'warning' ? 'exclamation-triangle' : 'info-circle');
+                toast.setAttribute('role', 'status');
+                toast.setAttribute('aria-live', 'polite');
+                toast.innerHTML = `
+                    <i class="fas fa-${icon} toast-icon" aria-hidden="true"></i>
+                    <div class="toast-message">${message}</div>
+                    <button class="toast-close" aria-label="Dismiss notification">&times;</button>
+                `;
+
+                const removeToast = () => {
+                    toast.classList.add('hide');
+                    toast.addEventListener('animationend', () => toast.remove(), { once: true });
+                };
+
+                // Auto-hide after 4 seconds
+                const t = setTimeout(removeToast, 4000);
+
+                // Allow manual close
+                toast.querySelector('.toast-close').addEventListener('click', () => {
+                    clearTimeout(t);
+                    removeToast();
+                });
+
+                container.appendChild(toast);
+            }
+
+            // Utility function to show alerts
+            function showAlert(message, type) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type}`;
+                alertDiv.innerHTML = `
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                    ${message}
+                `;
+                
+                // Insert at the top of the settings container
+                const container = document.querySelector('.settings-container');
+                container.insertBefore(alertDiv, container.firstChild);
+                
+                // Remove after 5 seconds
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 5000);
+            }
+        });
+    </script>
+</body>
+</html>

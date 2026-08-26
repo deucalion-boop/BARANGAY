@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <style>
+        /* Hide reCAPTCHA test message and warning banner */
+        .g-recaptcha > div > div {
+            filter: none !important;
+        }
+        .g-recaptcha iframe {
+            filter: none !important;
+        }
+        /* Hide any warning/info text that appears with test keys */
+        .g-recaptcha + div,
+        .g-recaptcha ~ div[style],
+        div[style*="background"][style*="color"],
+        div[style*="border"][style*="padding"] {
+            display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            overflow: hidden !important;
+        }
+        /* Target the specific warning message container */
+        body > div[style*="position: absolute"],
+        body > div[style*="z-index"][style*="background"] {
+            display: none !important;
+        }
+        
+        /* Modal Styles - Keep existing modal styles with updated colors */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .modal.active {
+            display: flex;
+            background-color: rgba(0, 0, 0, 0.6);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            padding: 2.5rem;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 420px;
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.25),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+            position: relative;
+            transform: translateY(30px) scale(1);
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .modal.active .modal-content {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .modal-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #1c4aca, #0b3769);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            color: white;
+            font-size: 1.8rem;
+            box-shadow: 0 8px 20px rgba(28, 74, 202, 0.3);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+            transition: all 0.3s ease;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .close-modal:hover {
+            color: #333;
+            background: rgba(0, 0, 0, 0.1);
+            transform: rotate(90deg);
+        }
+
+        .login-form {
+            margin-top: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            color: #555;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input {
+            width: 100%;
+            /* extra right padding so text doesn't overlap the right icon */
+            padding: 1rem 2.75rem 1rem 1.25rem;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #1c4aca;
+            box-shadow: 
+                0 0 0 4px rgba(28, 74, 202, 0.1),
+                0 5px 15px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+        }
+
+        /* Phone input with PH flag icon inside */
+        #register-phone {
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 24'><rect width='36' height='12' y='0' fill='%230038A8'/><rect width='36' height='12' y='12' fill='%23CE1126'/><polygon points='0,0 0,24 12,12' fill='%23ffffff'/></svg>");
+            background-repeat: no-repeat;
+            background-position: 0.75rem center;
+            background-size: 22px 15px;
+            padding-left: 2.75rem;
+        }
+
+        /* Hide right-side phone icon for this field to avoid clutter */
+        #register-phone + .input-icon {
+            display: none;
+        }
+
+        /* Match select styling with inputs */
+        .form-group select {
+            width: 100%;
+            padding: 1rem 2.75rem 1rem 1.25rem;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg fill='none' stroke='%23999' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'><path d='M6 9l6 6 6-6'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 16px 16px;
+        }
+
+        .form-group select:focus {
+            outline: none;
+            border-color: #1c4aca;
+            box-shadow: 
+                0 0 0 4px rgba(28, 74, 202, 0.1),
+                0 5px 15px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .form-group select:disabled {
+            background-color: #f9fafb;
+            color: #a0aec0;
+            cursor: not-allowed;
+        }
+
+        /* Hide trailing input icon for selects to avoid overlap with arrow */
+        .form-group select + .input-icon {
+            display: none;
+        }
+
+        .form-group input:focus + label {
+            color: #1c4aca;
+            transform: translateX(5px);
+        }
+
+        .input-icon {
+            position: absolute;
+            right: 1.25rem;
+            top: 50%;
+            /* center the icon vertically within the input */
+            transform: translateY(-50%);
+            color: #999;
+            transition: color 0.3s ease;
+        }
+
+        .form-group input:focus ~ .input-icon {
+            color: #1c4aca;
+        }
+
+        .login-submit {
+            width: 100%;
+            padding: 1.1rem;
+            background: linear-gradient(135deg, #1c4aca, #0b3769);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(28, 74, 202, 0.3);
+        }
+
+        .login-submit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(28, 74, 202, 0.4);
+        }
+
+        .login-submit:active {
+            transform: translateY(-1px);
+        }
+
+        .login-submit::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .login-submit:hover::before {
+            left: 100%;
+        }
+
+        .register-modal .modal-icon {
+            background: linear-gradient(135deg, #1c4aca, #0b3769);
+        }
+
+        .register-modal .login-submit {
+            background: linear-gradient(135deg, #1c4aca, #0b3769);
+            box-shadow: 0 5px 15px rgba(28, 74, 202, 0.3);
+        }
+
+        .register-modal .login-submit:hover {
+            box-shadow: 0 8px 25px rgba(28, 74, 202, 0.4);
+        }
+
+        .register-modal .form-group input:focus {
+            border-color: #1c4aca;
+            box-shadow: 0 0 0 4px rgba(28, 74, 202, 0.1), 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .register-modal .form-footer a {
+            color: #1c4aca;
+        }
+
+        .register-modal .form-footer a:hover {
+            color: #0b3769;
+        }
+
+        .password-strength {
+            margin-top: 0.5rem;
+            height: 4px;
+            border-radius: 2px;
+            background-color: #e5e7eb;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+
+        .strength-weak {
+            background-color: #ef4444;
+            width: 33%;
+        }
+
+        .strength-medium {
+            background-color: #f59e0b;
+            width: 66%;
+        }
+
+        .strength-strong {
+            background-color: #10b981;
+            width: 100%;
+        }
+
+        .terms-checkbox {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        /* Action bar for register steps (not sticky; no modal scroll) */
+        .register-step { padding-bottom: 0; }
+        .register-actions {
+            position: static;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            margin-top: 1rem;
+            max-width: 100%;
+        }
+        .register-actions .login-submit {
+            /* prevent horizontal overflow on zoom; allow wrapping */
+            max-width: 100%;
+        }
+        @media (max-width: 520px) {
+            .register-actions { justify-content: stretch; }
+            .register-actions .login-submit { flex: 1 1 100%; }
+        }
+
+        .terms-checkbox input {
+            margin-top: 0.25rem;
+            flex-shrink: 0;
+        }
+
+        .terms-checkbox label {
+            font-size: 0.9rem;
+            line-height: 1.4;
+            margin-bottom: 0;
+        }
+
+        .terms-checkbox a {
+            color: #1c4aca;
+            text-decoration: none;
+        }
+
+        .terms-checkbox a:hover {
+            text-decoration: underline;
+        }
+
+        .form-footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .form-footer a {
+            color: #1c4aca;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .form-footer a::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #1c4aca;
+            transition: width 0.3s ease;
+        }
+
+        .form-footer a:hover {
+            color: #0b3769;
+        }
+
+        .form-footer a:hover::after {
+            width: 100%;
+        }
+
+        .modal-title {
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .modal-subtitle {
+            color: #718096;
+            font-size: 1rem;
+            margin-bottom: 0;
+        }
+
+        /* Loading animation */
+        .loading {
+            position: relative;
+            color: transparent !important;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 24px;
+            height: 24px;
+            margin: -12px 0 0 -12px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Success animation */
+        @keyframes successCheck {
+            0% {
+                stroke-dashoffset: 100;
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.1);
+            }
+            100% {
+                stroke-dashoffset: 0;
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .success-check {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 1.5rem;
+        }
+
+        .success-check path {
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            animation: successCheck 0.8s ease-in-out forwards;
+            animation-delay: 0.2s;
+        }
+
+        /* Scroll Animation Styles */
+        .scroll-animate {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease-out;
+        }
+
+        .scroll-animate.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .scroll-animate.up {
+            transform: translateY(-30px);
+        }
+
+        /* Stagger delays for sequential animation */
+        .scroll-animate.delay-1 { transition-delay: 0.1s; }
+        .scroll-animate.delay-2 { transition-delay: 0.2s; }
+        .scroll-animate.delay-3 { transition-delay: 0.3s; }
+        .scroll-animate.delay-4 { transition-delay: 0.4s; }
+        .scroll-animate.delay-5 { transition-delay: 0.5s; }
+        .scroll-animate.delay-6 { transition-delay: 0.6s; }
+
+        /* Hero section doesn't need scroll animation */
+        .hero {
+            opacity: 1 !important;
+            transform: none !important;
+        }
+
+        /* Enhanced button styles */
+        .resident-login-btn, .admin-login-btn, #resident-login-btn, #admin-login-btn {
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .resident-login-btn:hover, .admin-login-btn:hover, #resident-login-btn:hover, #admin-login-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Modal type specific styles */
+        .resident-modal .modal-icon {
+            background: linear-gradient(135deg, #1c4aca, #0b3769);
+        }
+
+        .resident-modal .login-submit {
+            background: linear-gradient(135deg, #1c4aca, #0b3769);
+            box-shadow: 0 5px 15px rgba(28, 74, 202, 0.3);
+        }
+
+        .resident-modal .login-submit:hover {
+            box-shadow: 0 8px 25px rgba(28, 74, 202, 0.4);
+        }
+
+        .resident-modal .form-group input:focus {
+            border-color: #1c4aca;
+            box-shadow: 0 0 0 4px rgba(28, 74, 202, 0.1), 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .resident-modal .form-group input:focus ~ .input-icon {
+            color: #1c4aca;
+        }
+
+        .resident-modal .form-footer a {
+            color: #1c4aca;
+        }
+
+        .resident-modal .form-footer a:hover {
+            color: #0b3769;
+        }
+
+        .resident-modal .input-icon {
+            color: #999;
+        }
+
+        .resident-modal .input-icon:hover {
+            color: #1c4aca;
+        }
+
+        .admin-modal .modal-icon {
+            background: linear-gradient(135deg, #1c4aca, #0b3769);
+        }
+
+        .admin-modal .login-submit {
+            background: linear-gradient(135deg, #1c4aca, #0b3769);
+            box-shadow: 0 5px 15px rgba(28, 74, 202, 0.3);
+        }
+
+        .admin-modal .login-submit:hover {
+            box-shadow: 0 8px 25px rgba(28, 74, 202, 0.4);
+        }
+
+        .admin-modal .form-group input:focus {
+            border-color: #1c4aca;
+            box-shadow: 0 0 0 4px rgba(28, 74, 202, 0.1), 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .admin-modal .form-footer a {
+            color: #1c4aca;
+        }
+
+        .admin-modal .form-footer a:hover {
+            color: #0b3769;
+        }
+
+        /* Alert message styles */
+        .alert-message {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .alert-error {
+            background: #fed7d7;
+            color: #c53030;
+            border: 1px solid #feb2b2;
+        }
+
+        .alert-success {
+            background: #c6f6d5;
+            color: #276749;
+            border: 1px solid #9ae6b4;
+        }
+
+        /* Modal specific styles */
+        .register-modal .modal-content {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            padding: 2.5rem 1.5rem;
+            border-radius: 16px;
+            max-width: 500px;
+            max-height: 92vh; /* make the modal a bit taller to avoid internal scrolling */
+            box-shadow:
+                0 25px 50px -12px rgba(0, 0, 0, 0.25),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+            position: relative;
+            transform: translateY(30px) scale(1);
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        @media (max-width: 1000px) {
+            .register-modal .modal-content {
+                max-width: 98vw;
+                padding: 1.5rem 0.5rem;
+            }
+        }
+
+        .step-indicator {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #e5e7eb;
+            color: #333;
+            font-weight: bold;
+            font-size: 1.1rem;
+            line-height: 32px;
+            text-align: center;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .step-indicator.active {
+            background: #1c4aca;
+            color: #fff;
+            box-shadow: 0 0 0 4px rgba(28, 74, 202, 0.15);
+        }
+
+        .resident-login-btn, #resident-login-btn {
+            background: linear-gradient(135deg, #1c4aca, #0b3769);
+            box-shadow: 0 5px 15px rgba(28, 74, 202, 0.3);
+        }
+
+        .resident-login-btn:hover, #resident-login-btn:hover {
+            box-shadow: 0 8px 25px rgba(28, 74, 202, 0.4);
+        }
+
+        /* Image Marquee */
+        .image-marquee {
+            padding: 2.5rem 0;
+            background: transparent;
+        }
+        .image-marquee .marquee-viewport {
+            overflow: hidden;
+            width: 100%;
+            position: relative;
+        }
+        .image-marquee .marquee-track {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            width: max-content;
+            animation: marquee-scroll 24s linear infinite;
+        }
+        .image-marquee .marquee-track:hover { animation-play-state: paused; }
+        .image-marquee img {
+            height: 150px;
+            aspect-ratio: 16 / 9;
+            width: auto;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            background: #0b1120;
+            object-fit: cover; /* uniform size with tasteful crop */
+        }
+        @media (max-width: 640px) {
+            .image-marquee img { height: 110px; }
+        }
+        @keyframes marquee-scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* Consistent branding & login button */
+        .logo { display: flex; align-items: center; gap: 10px; }
+        .brand-logo { height: 28px; width: auto; display: inline-block; }
+        .brand-text { font-weight: 800; letter-spacing: 0.3px; }
+        .nav-links .login-btn {
+            background: linear-gradient(135deg, #1c4aca, #0b3769);
+            color: #ffffff;
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            box-shadow: 0 6px 16px rgba(28, 74, 202, 0.28);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .nav-links .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 22px rgba(28, 74, 202, 0.35);
+        }
+        .btn-logo { height: 18px; width: auto; display: inline-block; }
+
+        /* Align nav links with Login button */
+        .nav-links { display: flex; align-items: center; gap: 1rem; }
+        .nav-links li { display: flex; align-items: center; }
+        .nav-links a { display: inline-flex; align-items: center; }
+
+        /* Home panels */
+        .home-panels { padding: 3rem 0 2rem; }
+
+    /* Removed: alerts banner, quick actions, service status (no CSS needed) */
+
+    /* Removed: stats counters */
+    /* .stat-label removed */
+
+        /* Announcements Preview */
+        .announcements-preview { margin: 2.5rem 0; }
+        .preview-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+        .preview-header .view-all { color: #1c4aca; text-decoration: none; font-weight: 700; }
+        .preview-list { display: grid; gap: 1rem; margin-top: .9rem; }
+        .announce-item { display: grid; grid-template-columns: 96px 1fr; gap: 1rem; background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: .9rem; box-shadow: 0 8px 20px rgba(0,0,0,0.06); transition: transform .18s ease, box-shadow .18s ease; text-decoration: none; color: inherit; border-left: 4px solid #e5e7eb; }
+        .announce-item:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0,0,0,0.12); }
+        .announce-item[data-type="urgent"] { border-left-color: #b91c1c; }
+        .announce-item[data-type="emergency"] { border-left-color: #dc2626; }
+        .announce-item[data-type="maintenance"] { border-left-color: #f59e0b; }
+        .announce-item[data-type="event"] { border-left-color: #10b981; }
+        .announce-item .thumb { width: 96px; height: 72px; border-radius: 10px; overflow: hidden; background: #0b1120; display: flex; align-items: center; justify-content: center; }
+        .announce-item .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .announce-item .meta { display: flex; align-items: center; gap: .5rem; margin-bottom: .25rem; min-height: 1.25rem; }
+    .announce-item .title { margin: 0 0 .15rem; font-size: 1.02rem; font-weight: 700; color: #0b1120; display: -webkit-box; -webkit-line-clamp: 1; line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+    .announce-item .excerpt { margin: 0; color: #6b7280; font-size: .92rem; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        /* Local badge styles for announcements */
+        .badge { display: inline-flex; align-items: center; gap: .4rem; padding: .18rem .5rem; border-radius: 999px; font-size: .72rem; font-weight: 800; letter-spacing: .2px; white-space: nowrap; }
+        .badge-muted { background: #eef2f7; color: #64748b; }
+        .badge-urgent { background: #fee2e2; color: #b91c1c; }
+        .badge-emergency { background: #fee2e2; color: #dc2626; }
+        .badge-maintenance { background: #fef3c7; color: #92400e; }
+        .badge-general { background: #eef2f7; color: #64748b; }
+
+        /* Our Features */
+        .features { margin: 2rem 0 1.5rem; }
+        .features .section-title { margin-bottom: .5rem; }
+        .features-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+        @media (max-width: 900px) { .features-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 600px) { .features-grid { grid-template-columns: 1fr; } }
+    .feature-card { display: flex; flex-direction: column; gap: .6rem; align-items: center; text-align: center; background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 1rem; text-decoration: none; color: inherit; box-shadow: 0 6px 16px rgba(0,0,0,0.05); transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+        .feature-card:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0,0,0,0.12); border-color: #c7d2fe; }
+    .feature-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1c4aca, #0b3769); color: #fff; box-shadow: 0 6px 14px rgba(28, 74, 202, 0.2); }
+    .feature-icon i { font-size: 16px; line-height: 1; }
+        .feature-card h3 { margin: 0; font-size: 1rem; font-weight: 800; color: #0b1120; }
+        .feature-card p { margin: 0; color: #6b7280; font-size: .92rem; line-height: 1.45; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="nav-container">
+                <div class="logo">
+                    <img src="/images/logo.png" alt="Barangay Center Logo" class="brand-logo">
+                    <span class="brand-text">BARANGAY MALIMBA</span>
+                </div>
+                <div class="hamburger">
+                    <i class="fas fa-bars"></i>
+                </div>
+                <ul class="nav-links">
+                    <li><a href="/" class="active">Home</a></li>
+                    <li><a href="/about">About</a></li>
+                    <li><a href="/contact">Contact</a></li>
+                    <li>
+                        <a href="/users/login" class="login-btn">Login</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section with Medical-themed Background -->
+    <section class="hero">
+        <!-- Medical-themed animated background -->
+        <div class="medical-background" id="medical-bg"></div>
+        
+        <div class="container">
+            <div class="hero-content">
+                <img src="/images/logo.png" alt="Barangay Portal Logo" class="hero-logo" style="max-width: 320px; width: 80%; height: auto; display: block; margin: 0 auto 10px;" />
+                <div class="hero-intro" style="text-align:center; margin-bottom: 16px;">
+                    <% if (typeof siteTagline !== 'undefined' && siteTagline) { %>
+                        <p class="hero-tagline" style="margin: 6px 0 0; font-size: 1.15rem; font-weight: 700; color: #ffffff; text-shadow: 0 2px 6px rgba(0,0,0,0.25);"> <%= siteTagline %> </p>
+                    <% } %>
+                    <% if (typeof siteDescription !== 'undefined' && siteDescription) { %>
+                        <p class="hero-description" style="margin: 6px auto 0; max-width: 820px; color: #e5e7eb; font-size: 0.98rem; line-height: 1.6; text-shadow: 0 2px 6px rgba(0,0,0,0.25);"> <%= siteDescription %> </p>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Alerts + Quick Actions + Status + Stats + Announcements Preview -->
+    <section class="home-panels">
+        <div class="container">
+            <!-- Our Features -->
+            <div class="features scroll-animate">
+                <div class="features-header">
+                    <h2 class="section-title">Our Features</h2>
+                </div>
+                <div class="features-grid" role="list">
+                    <a class="feature-card" href="/users/announcements" role="listitem">
+                        <div class="feature-icon" aria-hidden="true"><i class="fas fa-bullhorn"></i></div>
+                        <h3>Announcements</h3>
+                        <p>Stay updated with the latest barangay news and advisories.</p>
+                    </a>
+                    <a class="feature-card" href="/users/schedule" role="listitem">
+                        <div class="feature-icon" aria-hidden="true"><i class="fas fa-calendar-check"></i></div>
+                        <h3>Appointments</h3>
+                        <p>Request and manage your barangay appointments online.</p>
+                    </a>
+                    <a class="feature-card" href="/users/login#login" role="listitem">
+                        <div class="feature-icon" aria-hidden="true"><i class="fas fa-file-signature"></i></div>
+                        <h3>Resident Requests</h3>
+                        <p>Apply for certificates and submit service requests.</p>
+                    </a>
+                    <a class="feature-card" href="/users/login#login" role="listitem">
+                        <div class="feature-icon" aria-hidden="true"><i class="fas fa-bell"></i></div>
+                        <h3>Notifications</h3>
+                        <p>Get real‑time updates on your requests and schedules.</p>
+                    </a>
+                    <a class="feature-card" href="/about" role="listitem">
+                        <div class="feature-icon" aria-hidden="true"><i class="fas fa-info-circle"></i></div>
+                        <h3>About Barangay</h3>
+                        <p>Learn more about our programs, team, and mission.</p>
+                    </a>
+                    <a class="feature-card" href="/contact" role="listitem">
+                        <div class="feature-icon" aria-hidden="true"><i class="fas fa-headset"></i></div>
+                        <h3>Contact Us</h3>
+                        <p>Need help? Reach out for assistance and feedback.</p>
+                    </a>
+                </div>
+            </div>
+
+            
+
+            <!-- Announcements Preview -->
+            <div class="announcements-preview scroll-animate">
+                <div class="preview-header">
+                    <h2 class="section-title">Latest Announcements</h2>
+                    <a class="view-all" href="/users/announcements">View all</a>
+                </div>
+                <div id="announcements-list" class="preview-list" data-ssr="<%= (typeof homeAnnouncements !== 'undefined' && homeAnnouncements && homeAnnouncements.length) ? '1' : '0' %>">
+                    <% if (typeof homeAnnouncements !== 'undefined' && homeAnnouncements && homeAnnouncements.length) { %>
+                        <% homeAnnouncements.forEach(function(a){ %>
+                            <% const type = (a.type || 'general'); %>
+                            <% const typeClass = (type === 'urgent' ? 'badge-urgent' : (type === 'emergency' ? 'badge-emergency' : (type === 'maintenance' ? 'badge-maintenance' : 'badge-general'))); %>
+                            <% const raw = (a.content || ''); const text = raw.replace(/<[^>]*>/g, ''); const snippet = text.length > 120 ? text.slice(0,120) + '…' : text; %>
+                            <a class="announce-item" href="/users/announcements" data-type="<%= type %>">
+                                <div class="thumb">
+                                    <% if (a.imageUrl) { %>
+                                        <img src="<%= a.imageUrl %>" alt="Announcement image" loading="lazy">
+                                    <% } else { %>
+                                        <i class="fas fa-bullhorn" style="color:#93c5fd;font-size:1.25rem"></i>
+                                    <% } %>
+                                </div>
+                                <div class="content">
+                                    <div class="meta">
+                                        <span class="badge <%= typeClass %>"><%= String(type || 'general').toUpperCase() %></span>
+                                        <% if (a.createdAt) { %>
+                                            <span style="margin-left:.5rem;color:#6b7280;font-size:.8rem"><%= new Date(a.createdAt).toLocaleString() %></span>
+                                        <% } %>
+                                    </div>
+                                    <h3 class="title"><%= a.title %></h3>
+                                    <p class="excerpt"><%= snippet %></p>
+                                </div>
+                            </a>
+                        <% }); %>
+                    <% } else { %>
+                        <!-- Placeholder when no announcements -->
+                        <div class="announce-item placeholder">
+                            <div class="meta">
+                                <span class="badge badge-muted">No posts</span>
+                            </div>
+                            <div class="content">
+                                <h3>Announcements will appear here</h3>
+                                <p>Check back soon or sign in to see more.</p>
+                            </div>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Image Marquee -->
+    <section class="image-marquee" aria-label="Community gallery">
+        <div class="container">
+            <div class="marquee-viewport">
+                <div class="marquee-track">
+                    <!-- Group 1: specified gallery images -->
+                    <img src="/images/a.jpg" alt="Gallery image A" loading="lazy" />
+                    <img src="/images/b.jpg" alt="Gallery image B" loading="lazy" />
+                    <img src="/images/c.jpg" alt="Gallery image C" loading="lazy" />
+                    <img src="/images/d.jpg" alt="Gallery image D" loading="lazy" />
+                    <img src="/images/e.jpg" alt="Gallery image E" loading="lazy" />
+                    <!-- Group 2 (duplicate for seamless loop) -->
+                    <img src="/images/a.jpg" alt="Gallery image A" loading="lazy" />
+                    <img src="/images/b.jpg" alt="Gallery image B" loading="lazy" />
+                    <img src="/images/c.jpg" alt="Gallery image C" loading="lazy" />
+                    <img src="/images/d.jpg" alt="Gallery image D" loading="lazy" />
+                    <img src="/images/e.jpg" alt="Gallery image E" loading="lazy" />
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section scroll-animate delay-3">
+                    <h3>Contact Info</h3>
+                    <ul>
+                        <li><i class="fas fa-map-marker-alt"></i> Barangay Malimba Gapan, City, Nueva Ecija</li>
+                        <li><i class="fas fa-phone"></i> +63 915 351 1681</li>
+                        <li><i class="fas fa-envelope"></i> sheenkahlie@gmail.com</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Barangay Malimba. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Unified Login Modal -->
+    <div class="modal resident-modal" id="resident-modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div class="modal-header">
+                <div class="modal-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <h2 class="modal-title">Login</h2>
+                <p class="modal-subtitle">Access your account</p>
+            </div>
+            <form class="login-form" id="resident-form">
+                <div class="form-group">
+                    <label for="login-identifier">Email or Username</label>
+                    <div class="input-wrap">
+                        <input type="text" id="login-identifier" placeholder="Enter your email" required>
+                        <i class="fas fa-id-badge input-icon"></i>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <div class="input-wrap">
+                        <input type="password" id="login-password" placeholder="Enter your password" required>
+                        <i class="fas fa-lock input-icon"></i>
+                    </div>
+                </div>
+                <div class="form-group" style="display: flex; justify-content: center; margin: 1rem 0;">
+                    <div class="g-recaptcha" data-sitekey="<%= typeof recaptchaSiteKey !== 'undefined' ? recaptchaSiteKey : '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI' %>"></div>
+                </div>
+                <button type="submit" class="login-submit">Sign In</button>
+                <div class="form-footer">
+                    <p>Don't have an account? <a href="#" id="register-link">Register here</a></p>
+                    <p><a href="/users/forgot-password" target="_blank">Forgot your password?</a></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div class="modal register-modal" id="register-modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div class="modal-header">
+                <div class="modal-icon">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <h2 class="modal-title">Create Account</h2>
+                <p class="modal-subtitle">Join our community portal</p>
+                <div class="register-steps-indicator" style="display:flex;justify-content:center;gap:1rem;margin:1rem 0;">
+                    <span id="step-indicator-1" class="step-indicator active">1</span>
+                    <span id="step-indicator-2" class="step-indicator">2</span>
+                    <span id="step-indicator-3" class="step-indicator">3</span>
+                </div>
+            </div>
+            <form class="login-form" id="register-form">
+                <!-- Step 1: Personal Info -->
+                <div class="register-step" id="register-step-1">
+                    <h3>Step 1: Personal Information</h3>
+                    <div class="form-group">
+                        <label for="register-name">Full Name</label>
+                        <div class="input-wrap">
+                            <input type="text" id="register-name" placeholder="Enter your full name" required>
+                            <i class="fas fa-user input-icon"></i>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-phone">Phone Number</label>
+                        <div class="input-wrap">
+                            <input type="tel" id="register-phone" placeholder="Enter your phone number" required>
+                            <i class="fas fa-phone input-icon"></i>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-unit">Purok</label>
+                        <div class="input-wrap">
+                            <select id="register-unit" required>
+                                <option value="">Select Purok</option>
+                                <option value="1">Purok 1</option>
+                                <option value="2">Purok 2</option>
+                                <option value="3">Purok 3</option>
+                                <option value="4">Purok 4</option>
+                                <option value="5">Purok 5</option>
+                                <option value="6">Purok 6</option>
+                                <option value="7">Purok 7</option>
+                            </select>
+                            <i class="fas fa-home input-icon"></i>
+                        </div>
+                    </div>
+                    <div class="register-actions">
+                        <button type="button" class="login-submit" id="next-step-1">Next</button>
+                    </div>
+                </div>
+                <!-- Step 2: Account Info -->
+                <div class="register-step" id="register-step-2" style="display:none;">
+                    <h3>Step 2: Account Information</h3>
+                    <div class="form-group">
+                        <label for="register-email">Email Address</label>
+                        <div class="input-wrap">
+                            <input type="email" id="register-email" placeholder="Enter your email" required>
+                            <i class="fas fa-envelope input-icon"></i>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">Password</label>
+                        <div class="input-wrap">
+                            <input type="password" id="register-password" placeholder="Create a password" required>
+                            <i class="fas fa-lock input-icon"></i>
+                        </div>
+                        <div class="password-strength">
+                            <div class="password-strength-bar" id="password-strength-bar"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-confirm-password">Confirm Password</label>
+                        <div class="input-wrap">
+                            <input type="password" id="register-confirm-password" placeholder="Confirm your password" required>
+                            <i class="fas fa-lock input-icon"></i>
+                        </div>
+                    </div>
+                    <div class="register-actions">
+                        <button type="button" class="login-submit" id="prev-step-2">Back</button>
+                        <button type="button" class="login-submit" id="next-step-2">Next</button>
+                    </div>
+                </div>
+                <!-- Step 3: Confirmation -->
+                <div class="register-step" id="register-step-3" style="display:none;">
+                    <h3>Step 3: Confirmation</h3>
+                    <div class="form-group" style="display: flex; justify-content: center; margin: 1rem 0;">
+                        <div class="g-recaptcha" data-sitekey="<%= typeof recaptchaSiteKey !== 'undefined' ? recaptchaSiteKey : '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI' %>"></div>
+                    </div>
+                    <div class="terms-checkbox">
+                        <input type="checkbox" id="terms-agreement" required>
+                        <label for="terms-agreement">I agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a></label>
+                    </div>
+                    <div class="register-actions">
+                        <button type="button" class="login-submit" id="prev-step-3">Back</button>
+                        <button type="submit" class="login-submit">Create Account</button>
+                    </div>
+                    <div class="form-footer">
+                        <p>Already have an account? <a href="#" id="login-link">Sign in here</a></p>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script id="home-config" type="application/json"><%- JSON.stringify({ allowUserRegistration: (typeof allowUserRegistration !== 'undefined' ? allowUserRegistration !== false : true) }) %></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load server-provided flags
+            try {
+                const cfgEl = document.getElementById('home-config');
+                const cfg = cfgEl ? JSON.parse(cfgEl.textContent || '{}') : {};
+                window.ALLOW_USER_REGISTRATION = typeof cfg.allowUserRegistration === 'boolean' ? cfg.allowUserRegistration : true;
+            } catch (_) { window.ALLOW_USER_REGISTRATION = true; }
+            // Create medical-themed background elements
+            function createMedicalBackground() {
+                const bg = document.getElementById('medical-bg');
+                const medicalIcons = ['fas fa-heartbeat', 'fas fa-stethoscope', 'fas fa-plus-square', 
+                                    'fas fa-user-md', 'fas fa-clinic-medical', 'fas fa-ambulance',
+                                    'fas fa-prescription-bottle', 'fas fa-brain', 'fas fa-lungs'];
+                
+                // Create floating particles with different sizes and movements
+                for (let i = 0; i < 25; i++) {
+                    const particle = document.createElement('div');
+                    const sizeClass = ['small', 'medium', 'large'][Math.floor(Math.random() * 3)];
+                    particle.className = `medical-particle ${sizeClass}`;
+                    particle.style.left = `${Math.random() * 100}%`;
+                    particle.style.top = `${Math.random() * 100}%`;
+                    particle.style.animationDelay = `${Math.random() * 20}s`;
+                    particle.style.animationDuration = `${15 + Math.random() * 20}s`;
+                    bg.appendChild(particle);
+                }
+                
+                // Create medical icons with more dynamic movement
+                for (let i = 0; i < 12; i++) {
+                    const icon = document.createElement('i');
+                    icon.className = `medical-icon ${medicalIcons[Math.floor(Math.random() * medicalIcons.length)]}`;
+                    icon.style.left = `${Math.random() * 100}%`;
+                    icon.style.top = `${Math.random() * 100}%`;
+                    icon.style.animationDelay = `${Math.random() * 30}s`;
+                    icon.style.animationDuration = `${20 + Math.random() * 20}s`;
+                    bg.appendChild(icon);
+                }
+                
+                // Create pulse rings with varied timing
+                for (let i = 0; i < 8; i++) {
+                    const ring = document.createElement('div');
+                    ring.className = 'pulse-ring';
+                    ring.style.width = `${Math.random() * 200 + 100}px`;
+                    ring.style.height = ring.style.width;
+                    ring.style.left = `${Math.random() * 100}%`;
+                    ring.style.top = `${Math.random() * 100}%`;
+                    ring.style.animationDelay = `${Math.random() * 8}s`;
+                    ring.style.animationDuration = `${6 + Math.random() * 6}s`;
+                    bg.appendChild(ring);
+                }
+                
+                // Create wave lines for additional movement
+                for (let i = 0; i < 6; i++) {
+                    const wave = document.createElement('div');
+                    wave.className = 'wave-line';
+                    wave.style.width = `${Math.random() * 200 + 100}px`;
+                    wave.style.top = `${Math.random() * 100}%`;
+                    wave.style.animationDelay = `${Math.random() * 12}s`;
+                    wave.style.animationDuration = `${8 + Math.random() * 8}s`;
+                    bg.appendChild(wave);
+                }
+            }
+            
+            createMedicalBackground();
+
+            const scrollElements = document.querySelectorAll('.scroll-animate');
+            
+            let lastScrollTop = 0;
+            let isScrollingDown = true;
+            const elementInView = (el, dividend = 1) => {
+                const elementTop = el.getBoundingClientRect().top;
+                return (
+                    elementTop <= (window.innerHeight || document.documentElement.clientHeight) / dividend
+                );
+            };
+            
+            const handleScrollDirection = () => {
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                isScrollingDown = scrollTop > lastScrollTop;
+                lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+            };
+            
+            const displayScrollElement = (element) => {
+                element.classList.add('visible');
+                if (!isScrollingDown) {
+                    element.classList.add('up');
+                } else {
+                    element.classList.remove('up');
+                }
+            };
+            
+            const hideScrollElement = (element) => {
+                element.classList.remove('visible');
+                if (!isScrollingDown) {
+                    element.classList.add('up');
+                }
+            };
+            
+            const handleScrollAnimation = () => {
+                handleScrollDirection();
+                
+                scrollElements.forEach((el) => {
+                    if (elementInView(el, 1.2)) {
+                        displayScrollElement(el);
+                    } else if (!elementInView(el, 3) && isScrollingDown) {
+                        hideScrollElement(el);
+                    }
+                });
+            };
+            
+            window.addEventListener('scroll', () => {
+                handleScrollAnimation();
+            });
+            
+            handleScrollAnimation();
+            
+            // Removed database status indicator and check per request
+            
+            const residentModal = document.getElementById('resident-modal');
+            const registerModal = document.getElementById('register-modal');
+            
+            const residentBtns = document.querySelectorAll('#resident-login-btn, .resident-login-btn');
+            const registerLink = document.getElementById('register-link');
+            const loginLink = document.getElementById('login-link');
+            
+            const closeBtns = document.querySelectorAll('.close-modal');
+            
+            function openModal(modal) {
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                
+                setTimeout(() => {
+                    modal.classList.add('active');
+                }, 10);
+                
+                setTimeout(() => {
+                    const firstInput = modal.querySelector('input');
+                    if (firstInput) {
+                        firstInput.focus();
+                    }
+                }, 500);
+            }
+            
+            function closeModal(modal) {
+                modal.classList.remove('active');
+                
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }, 400);
+            }
+            
+            residentBtns.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    openModal(residentModal);
+                });
+            });
+            
+            // Removed admin buttons; unified login modal handles both roles
+            
+            // If redirected with #login hash, open the login modal automatically
+            if (window.location.hash === '#login') {
+                openModal(residentModal);
+            }
+            
+            // Open register modal when "Register here" is clicked
+            if (registerLink) {
+                registerLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (window.ALLOW_USER_REGISTRATION === false) {
+                        alert('The system is under maintenance. Registration is currently disabled.');
+                        return;
+                    }
+                    closeModal(residentModal);
+                    setTimeout(() => {
+                        openModal(registerModal);
+                    }, 400);
+                });
+            }
+            
+            // Switch back to login modal
+            if (loginLink) {
+                loginLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    closeModal(registerModal);
+                    setTimeout(() => {
+                        openModal(residentModal);
+                    }, 400);
+                });
+            }
+            
+            closeBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const modal = this.closest('.modal');
+                    closeModal(modal);
+                });
+            });
+            
+            window.addEventListener('click', function(e) {
+                if (e.target === residentModal) {
+                    closeModal(residentModal);
+                }
+                if (e.target === registerModal) {
+                    closeModal(registerModal);
+                }
+            });
+            
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    if (residentModal.classList.contains('active')) {
+                        closeModal(residentModal);
+                    }
+                    if (registerModal.classList.contains('active')) {
+                        closeModal(registerModal);
+                    }
+                }
+            });
+            
+            document.getElementById('resident-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const submitBtn = this.querySelector('.login-submit');
+                const identifier = document.getElementById('login-identifier').value.trim();
+                const password = document.getElementById('login-password').value;
+                const isEmail = identifier.includes('@');
+
+                submitBtn.classList.add('loading');
+                submitBtn.disabled = true;
+
+                try {
+                    // Get reCAPTCHA response token
+                    const recaptchaResponse = grecaptcha.getResponse();
+                    if (!recaptchaResponse) {
+                        alert('Please complete the reCAPTCHA verification');
+                        submitBtn.classList.remove('loading');
+                        submitBtn.disabled = false;
+                        return;
+                    }
+
+                    if (!isEmail) {
+                        // Admin login via x-www-form-urlencoded
+                        const params = new URLSearchParams();
+                        params.append('username', identifier);
+                        params.append('password', password);
+                        params.append('recaptchaToken', recaptchaResponse);
+                        const response = await fetch('/admin/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: params
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            closeModal(residentModal);
+                            window.location.href = '/admin/dashboard';
+                        } else {
+                            alert(data.message || 'Login failed');
+                            grecaptcha.reset(); // Reset reCAPTCHA on failure
+                        }
+                    } else {
+                        // Resident login via JSON
+                        const res = await fetch('/users/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: identifier, password, recaptchaToken: recaptchaResponse })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            closeModal(residentModal);
+                            if (data.redirectUrl) {
+                                window.location.href = data.redirectUrl;
+                            } else {
+                                window.location.reload();
+                            }
+                        } else {
+                            alert(data.message || 'Login failed');
+                            grecaptcha.reset(); // Reset reCAPTCHA on failure
+                        }
+                    }
+                } catch (err) {
+                    console.error('Login error:', err);
+                    alert('Server error during login. Please try again.');
+                    grecaptcha.reset(); // Reset reCAPTCHA on error
+                } finally {
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
+                }
+            });
+            
+            // Password strength indicator for register form
+            const passwordInput = document.getElementById('register-password');
+            const passwordStrengthBar = document.getElementById('password-strength-bar');
+            
+            if (passwordInput && passwordStrengthBar) {
+                passwordInput.addEventListener('input', function() {
+                    const password = this.value;
+                    let strength = 0;
+                    
+                    // Check password length
+                    if (password.length >= 8) strength += 1;
+                    
+                    // Check for lowercase letters
+                    if (/[a-z]/.test(password)) strength += 1;
+                    
+                    // Check for uppercase letters
+                    if (/[A-Z]/.test(password)) strength += 1;
+                    
+                    // Check for numbers
+                    if (/[0-9]/.test(password)) strength += 1;
+                    
+                    // Check for special characters
+                    if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+                    
+                    // Update strength bar
+                    passwordStrengthBar.className = 'password-strength-bar';
+                    if (strength <= 2) {
+                        passwordStrengthBar.classList.add('strength-weak');
+                    } else if (strength <= 4) {
+                        passwordStrengthBar.classList.add('strength-medium');
+                    } else {
+                        passwordStrengthBar.classList.add('strength-strong');
+                    }
+                });
+            }
+            
+            // Register form submission
+            document.getElementById('register-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                if (window.ALLOW_USER_REGISTRATION === false) {
+                    alert('The system is under maintenance. Registration is currently disabled.');
+                    return;
+                }
+                const submitBtn = this.querySelector('.login-submit');
+                const name = document.getElementById('register-name').value.trim();
+                const email = document.getElementById('register-email').value.trim();
+                const phone = document.getElementById('register-phone').value.trim();
+                const unitNumber = document.getElementById('register-unit').value.trim();
+                const password = document.getElementById('register-password').value;
+                const confirmPassword = document.getElementById('register-confirm-password').value;
+                const termsAgreed = document.getElementById('terms-agreement').checked;
+
+                // Get reCAPTCHA response token
+                const recaptchaResponse = grecaptcha.getResponse(1); // Use index 1 for second reCAPTCHA widget
+                if (!recaptchaResponse) {
+                    alert('Please complete the reCAPTCHA verification');
+                    return;
+                }
+
+                // Gmail-only validation
+                if (!/^([^\s@]+)@gmail\.com$/.test(email)) {
+                    alert('Email must be a valid Gmail address (e.g. yourname@gmail.com)');
+                    return;
+                }
+                // International phone validation: +countrycodeXXXXXXXXXX (10-12 digits)
+                if (!/^\+\d{1,3}\d{7,12}$/.test(phone)) {
+                    alert('Phone number must be in the format +<countrycode><number> (e.g. +639XXXXXXXXX, +14155552671)');
+                    return;
+                }
+                if (phone.length < 11 || phone.length > 15) {
+                    alert('Phone number must be between 11 and 15 characters (including country code)');
+                    return;
+                }
+
+                // Basic client-side validation
+                if (password !== confirmPassword) {
+                    alert('Passwords do not match!');
+                    return;
+                }
+                if (!termsAgreed) {
+                    alert('Please agree to the Terms of Service and Privacy Policy');
+                    return;
+                }
+
+                // split full name into first/last
+                const parts = name.split(' ').filter(Boolean);
+                const firstName = parts.shift() || '';
+                const lastName = parts.join(' ') || '';
+
+                submitBtn.classList.add('loading');
+                submitBtn.disabled = true;
+
+                try {
+                    const res = await fetch('/users/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ firstName, lastName, email, phone, unitNumber, password, confirmPassword, recaptchaToken: recaptchaResponse })
+                    });
+
+                    const data = await res.json();
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
+
+                    if (data.success) {
+                        closeModal(registerModal);
+                        alert(data.message || 'Registration submitted. Please wait for the approval of the admin.');
+                        openModal(residentModal);
+                        grecaptcha.reset(1); // Reset the second reCAPTCHA widget
+                    } else {
+                        alert(data.message || 'Registration failed');
+                        grecaptcha.reset(1); // Reset reCAPTCHA on failure
+                    }
+                } catch (err) {
+                    console.error('Registration error:', err);
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
+                    alert('Server error during registration. Please try again.');
+                    grecaptcha.reset(1); // Reset reCAPTCHA on error
+                }
+            });
+
+            // Restrict phone input to numbers and plus, max length 15
+            const phoneInput = document.getElementById('register-phone');
+            if (phoneInput) {
+                const PREFIX = '+63';
+                // Initialize with +63 if empty
+                if (!phoneInput.value) {
+                    phoneInput.value = PREFIX;
+                }
+
+                // Keep caret from moving into the prefix and always enforce +63
+                phoneInput.addEventListener('keydown', function(e) {
+                    const start = this.selectionStart || 0;
+                    // Prevent deleting within the prefix
+                    if ((e.key === 'Backspace' && start <= PREFIX.length) ||
+                        (e.key === 'Delete' && start < PREFIX.length)) {
+                        e.preventDefault();
+                    }
+                });
+
+                phoneInput.addEventListener('focus', function() {
+                    // Place caret at end on focus for convenience
+                    const el = this;
+                    setTimeout(() => {
+                        el.setSelectionRange(el.value.length, el.value.length);
+                    }, 0);
+                });
+
+                phoneInput.addEventListener('input', function() {
+                    // Allow only + and digits
+                    let v = this.value.replace(/[^\d+]/g, '');
+                    // Enforce +63 prefix
+                    if (!v.startsWith(PREFIX)) {
+                        // Strip leading pluses and optional 63 if user pasted
+                        v = v.replace(/^\++/, '');
+                        v = v.replace(/^63/, '');
+                        v = PREFIX + v;
+                    }
+                    // Max E.164-ish length including '+' (cap at 15 for this UI)
+                    if (v.length > 15) v = v.slice(0, 15);
+                    this.value = v;
+                });
+            }
+            
+            // Password confirmation validation
+            const confirmPasswordInput = document.getElementById('register-confirm-password');
+            
+            if (confirmPasswordInput && passwordInput) {
+                confirmPasswordInput.addEventListener('input', function() {
+                    if (this.value !== passwordInput.value && this.value.length > 0) {
+                        this.style.borderColor = '#ef4444';
+                    } else {
+                        this.style.borderColor = '#e9ecef';
+                    }
+                });
+            }
+            
+            // Removed admin-form handler; unified login handles admin via account type
+            
+            // Step indicator update function
+            // Define step containers for multi-step registration
+            const step1 = document.getElementById('register-step-1');
+            const step2 = document.getElementById('register-step-2');
+            const step3 = document.getElementById('register-step-3');
+            function updateStepIndicator(step) {
+                for (let i = 1; i <= 3; i++) {
+                    document.getElementById('step-indicator-' + i).classList.remove('active');
+                }
+                document.getElementById('step-indicator-' + step).classList.add('active');
+            }
+
+            // Validate required fields for each step
+            function validateStep1() {
+                const name = document.getElementById('register-name').value.trim();
+                const phone = document.getElementById('register-phone').value.trim();
+                const unit = document.getElementById('register-unit').value.trim();
+                if (!name) { alert('Full Name is required'); return false; }
+                if (!phone) { alert('Phone Number is required'); return false; }
+                if (!/^\+\d{1,3}\d{7,12}$/.test(phone)) { alert('Phone number must be in the format +<countrycode><number>'); return false; }
+                if (phone.length < 11 || phone.length > 15) { alert('Phone number must be between 11 and 15 characters'); return false; }
+                if (!unit) { alert('Purok is required'); return false; }
+                return true;
+            }
+            function validateStep2() {
+                const email = document.getElementById('register-email').value.trim();
+                const password = document.getElementById('register-password').value;
+                const confirmPassword = document.getElementById('register-confirm-password').value;
+                if (!email) { alert('Email is required'); return false; }
+                if (!/^([a-zA-Z0-9_.+-]+)@gmail\.com$/.test(email)) { alert('Email must be a valid Gmail address'); return false; }
+                if (!password) { alert('Password is required'); return false; }
+                if (password.length < 8) { alert('Password must be at least 8 characters'); return false; }
+                if (!confirmPassword) { alert('Confirm Password is required'); return false; }
+                if (password !== confirmPassword) { alert('Passwords do not match'); return false; }
+                return true;
+            }
+            function validateStep3() {
+                const terms = document.getElementById('terms-agreement').checked;
+                if (!terms) { alert('You must agree to the Terms of Service and Privacy Policy'); return false; }
+                return true;
+            }
+
+            document.getElementById('next-step-1').onclick = function() {
+                if (!validateStep1()) return;
+                step1.style.display = 'none';
+                step2.style.display = '';
+                updateStepIndicator(2);
+            };
+            document.getElementById('next-step-2').onclick = function() {
+                if (!validateStep2()) return;
+                step2.style.display = 'none';
+                step3.style.display = '';
+                updateStepIndicator(3);
+            };
+            document.getElementById('prev-step-2').onclick = function() {
+                step2.style.display = 'none';
+                step1.style.display = '';
+                updateStepIndicator(1);
+            };
+            document.getElementById('prev-step-3').onclick = function() {
+                step3.style.display = 'none';
+                step2.style.display = '';
+                updateStepIndicator(2);
+            };
+
+            document.getElementById('register-form').addEventListener('submit', function(e) {
+                if (!validateStep3()) {
+                    e.preventDefault();
+                }
+            });
+
+            // ===== Homepage dynamic data: alerts, stats, announcements =====
+            async function fetchActiveAnnouncements() {
+                try {
+                    // Primary path (mounted under /admin)
+                    let res = await fetch('/admin/api/announcements/active');
+                    if (!res.ok) {
+                        // Fallback path if router is not mounted under /admin
+                        res = await fetch('/api/announcements/active');
+                    }
+                    if (!res.ok) throw new Error('Failed to load announcements');
+                    const items = await res.json();
+                    return Array.isArray(items) ? items : [];
+                } catch (e) {
+                    console.warn('Announcements fetch error:', e.message);
+                    return [];
+                }
+            }
+
+            function renderAlerts(announcements) {
+                const banner = document.getElementById('alerts-banner');
+                const list = document.getElementById('alerts-list');
+                if (!banner || !list) return;
+                const critical = announcements.filter(a => ['urgent','emergency','maintenance'].includes(String(a.type || 'general')));
+                list.innerHTML = '';
+                if (!critical.length) {
+                    list.innerHTML = '<div class="alert-item placeholder" role="listitem"><span class="badge badge-muted">No active advisories</span><span class="alert-title">You\'re all caught up. Stay safe!</span></div>';
+                    return;
+                }
+                for (const a of critical.slice(0, 4)) {
+                    const badgeClass = a.type === 'urgent' ? 'badge-urgent' : (a.type === 'emergency' ? 'badge-emergency' : (a.type === 'maintenance' ? 'badge-maintenance' : 'badge-general'));
+                    const el = document.createElement('div');
+                    el.className = 'alert-item';
+                    const date = a.createdAt ? new Date(a.createdAt).toLocaleDateString() : '';
+                    el.innerHTML = `
+                        <span class="badge ${badgeClass}"><i class="fas fa-circle-exclamation"></i> ${String(a.type || 'general').toUpperCase()}</span>
+                        <span class="alert-title">${(a.title || 'Advisory')}</span>
+                        <span class="alert-date" style="margin-left:auto;color:#cbd5e1;font-size:.8rem">${date}</span>
+                    `;
+                    list.appendChild(el);
+                }
+            }
+
+            function renderAnnouncementsPreview(announcements) {
+                const list = document.getElementById('announcements-list');
+                if (!list) return;
+                const hadSSR = list.getAttribute('data-ssr') === '1';
+                if (!announcements.length) {
+                    // Preserve server-rendered items if present; otherwise show placeholder
+                    if (!hadSSR) {
+                        list.innerHTML = '<div class="announce-item placeholder"><div class="thumb"></div><div class="content"><div class="meta"><span class="badge badge-muted">No posts</span></div><h3>Announcements will appear here</h3><p>Check back soon or sign in to see more.</p></div></div>';
+                    }
+                    return;
+                }
+                list.innerHTML = '';
+                for (const a of announcements.slice(0, 3)) {
+                    const wrapper = document.createElement('a');
+                    wrapper.href = '/users/announcements';
+                    wrapper.className = 'announce-item';
+                    wrapper.setAttribute('data-type', String(a.type || 'general'));
+                    const typeClass = ['urgent','emergency','maintenance'].includes(String(a.type || ''))
+                        ? (a.type === 'urgent' ? 'badge-urgent' : a.type === 'emergency' ? 'badge-emergency' : 'badge-maintenance')
+                        : 'badge-general';
+                    const date = a.createdAt ? new Date(a.createdAt).toLocaleString() : '';
+                    const img = a.imageUrl ? `<img src="${a.imageUrl}" alt="Announcement image" loading="lazy">` : `<i class="fas fa-bullhorn" style="color:#93c5fd;font-size:1.25rem"></i>`;
+                    const text = (a.content || '').replace(/<[^>]*>/g,'');
+                    const snippet = text.length > 120 ? text.slice(0, 120) + '…' : text;
+                    wrapper.innerHTML = `
+                        <div class="thumb">${img}</div>
+                        <div class="content">
+                            <div class="meta"><span class="badge ${typeClass}">${(a.type || 'general').toUpperCase()}</span><span style="margin-left:.5rem;color:#6b7280;font-size:.8rem">${date}</span></div>
+                            <h3 class="title">${a.title || 'Announcement'}</h3>
+                            <p class="excerpt">${snippet}</p>
+                        </div>
+                    `;
+                    list.appendChild(wrapper);
+                }
+                list.setAttribute('data-ssr', '1');
+            }
+
+            // Stats counters removed from homepage
+
+            // Kick off loads
+            (async () => {
+                const anns = await fetchActiveAnnouncements();
+                // Alerts banner removed; skip renderAlerts
+                renderAnnouncementsPreview(anns);
+            })();
+        });
+    </script>
+  
+</body>
+</html>

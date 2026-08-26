@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - Community Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        /* About Section */
+.about-section {
+    margin-bottom: 3.5rem;
+    padding: 2rem;
+    background: var(--light-bg);
+    border-radius: 12px;
+    transition: background 0.3s ease;
+}
+
+.about-section:last-child {
+    margin-bottom: 0;
+}
+
+.about-section h3 {
+    color: var(--primary-color);
+    margin-bottom: 1.25rem;
+    font-size: clamp(1.5rem, 4vw, 1.75rem);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.about-section h3 i {
+    font-size: 1.3rem;
+    color: var(--primary-dark);
+}
+
+/* Tech Stack */
+.tech-stack {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1.25rem;
+    margin-top: 1.5rem;
+    padding: 1rem;
+}
+
+.tech-item {
+    background: white;
+    padding: 1.25rem;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tech-item:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-md);
+}
+
+.tech-icon {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    margin-bottom: 0.75rem;
+    transition: color 0.3s ease;
+}
+
+.tech-item:hover .tech-icon {
+    color: var(--primary-dark);
+}
+
+.tech-name {
+    font-weight: 600;
+    color: var(--dark-text);
+    font-size: 1rem;
+    letter-spacing: 0.02em;
+}
+
+/* Team Section */
+.team-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2.5rem;
+    margin-top: 2.5rem;
+    padding: 1rem;
+}
+
+.team-member {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.team-member:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-lg);
+}
+
+.member-avatar {
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    border-radius: 50%;
+    margin: 0 auto 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2.5rem;
+    font-weight: 500;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.team-member:hover .member-avatar {
+    transform: scale(1.05);
+}
+
+.member-name {
+    color: var(--primary-color);
+    margin-bottom: 0.75rem;
+    font-size: clamp(1.25rem, 3vw, 1.4rem);
+    font-weight: 700;
+}
+
+.member-role {
+    color: var(--secondary-text);
+    font-style: italic;
+    margin-bottom: 1.25rem;
+    font-size: 0.95rem;
+}
+
+/* Enhanced Team Card Layout */
+.team-member {
+    position: relative;
+    border: 1px solid #e9eef5;
+    background: linear-gradient(180deg, #ffffff, #fcfdff);
+}
+
+.team-member::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+    opacity: 0.85;
+}
+
+.member-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.member-info {
+    text-align: left;
+}
+
+.member-name {
+    margin: 0 0 0.35rem 0;
+}
+
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    border: 1px solid transparent;
+}
+
+.role-bns {
+    color: #4338ca;
+    background: rgba(99, 102, 241, 0.12);
+    border-color: rgba(99, 102, 241, 0.25);
+}
+
+.role-bhw {
+    color: #0f766e;
+    background: rgba(45, 212, 191, 0.12);
+    border-color: rgba(45, 212, 191, 0.25);
+}
+
+.member-phone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--secondary-text);
+    font-weight: 600;
+}
+
+.member-phone .phone-number {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* Removed call/SMS action buttons per request */
+
+/* Image Cards */
+.image-cards {
+    padding: 2rem 0 3rem;
+}
+
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.image-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.image-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-lg);
+}
+
+.image-card .card-image {
+    position: relative;
+    padding-top: 56.25%; /* 16:9 */
+    overflow: hidden;
+}
+
+.image-card .card-image img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.image-card .card-body {
+    padding: 1.25rem 1.25rem 1.5rem;
+}
+
+.image-card .card-title {
+    margin: 0 0 0.5rem 0;
+    color: var(--primary-color);
+    font-size: clamp(1.1rem, 2.5vw, 1.25rem);
+    font-weight: 700;
+}
+
+.image-card .card-text {
+    margin: 0;
+    color: var(--secondary-text);
+    line-height: 1.6;
+}
+
+/* Section Title (for image card group) */
+.section-title {
+    color: var(--primary-color);
+    margin: 0 0 1rem 0;
+    font-size: clamp(1.4rem, 3.5vw, 1.8rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* Landscape Image Card */
+
+/* place landscape card below the two cards within the same section */
+.image-cards .landscape-card {
+    margin-top: 1.75rem;
+}
+
+.landscape-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+}
+
+.landscape-card .card-image {
+    position: relative;
+    padding-top: 40%; /* wide landscape */
+    overflow: hidden;
+}
+
+.landscape-card .card-image img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.landscape-card .card-body {
+    padding: 1.25rem 1.5rem 1.75rem;
+}
+
+.landscape-card .card-title {
+    margin: 0 0 0.5rem 0;
+    color: var(--primary-color);
+    font-size: clamp(1.1rem, 2.5vw, 1.3rem);
+    font-weight: 700;
+}
+
+.landscape-card .card-text {
+    margin: 0;
+    color: var(--secondary-text);
+    line-height: 1.7;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .about-section {
+        padding: 1.5rem;
+    }
+
+    .tech-stack {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 1rem;
+    }
+
+    .team-grid {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .team-member {
+        padding: 1.5rem;
+    }
+
+    .member-avatar {
+        width: 100px;
+        height: 100px;
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .about-section h3 {
+        font-size: 1.4rem;
+        gap: 8px;
+    }
+
+    .tech-stack {
+        grid-template-columns: 1fr;
+    }
+
+    .tech-item {
+        padding: 1rem;
+    }
+
+    .team-grid {
+        grid-template-columns: 1fr;
+    }
+}
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="nav-container">
+                <div class="logo">
+                    <img src="/images/logo.png" alt="Barangay Center Logo" class="brand-logo">
+                    <span class="brand-text">BARANGAY MALIMBA</span>
+                </div>
+                <div class="hamburger">
+                    <i class="fas fa-bars"></i>
+                </div>
+                <ul class="nav-links">
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/about" class="active">About</a></li>
+                    <li><a href="/contact">Contact</a></li>
+                    <li><a href="/users/login" class="login-btn">Login</a></li>
+                </ul>
+            </div>
+        </div>
+    </header>
+
+    <section class="hero">
+        <!-- Medical-themed animated background -->
+        <div class="medical-background" id="medical-bg"></div>
+        
+        <div class="container">
+            <div class="hero-content">
+                <img src="/images/logo.png" alt="Barangay Portal Logo" class="hero-logo" style="max-width: 320px; width: 80%; height: auto; display: block; margin: 0 auto 10px;" />
+                <h1 style="text-align:center;">About Our Community Portal</h1>
+            </div>
+        </div>
+    </section>
+
+    <!-- Health Staff Section -->
+    <section class="about-section scroll-animate">
+        <div class="container">
+            <h3><i class="fas fa-user-nurse" aria-hidden="true"></i> Barangay Health Staff</h3>
+            <div class="team-grid">
+                <div class="team-member">
+                    <div class="member-header">
+                        <div class="member-avatar" aria-hidden="true">CS</div>
+                        <div class="member-info">
+                            <div class="member-name">BNS Chona P Santos</div>
+                            <span class="role-badge role-bns" aria-label="Barangay Nutrition Scholar">BNS</span>
+                        </div>
+                    </div>
+                    <div class="member-phone"><i class="fas fa-phone" aria-hidden="true"></i> <span class="phone-number">0991 343 3708</span></div>
+                    
+                </div>
+
+                <div class="team-member">
+                    <div class="member-header">
+                        <div class="member-avatar" aria-hidden="true">JP</div>
+                        <div class="member-info">
+                            <div class="member-name">BHW Jerelene Perido</div>
+                            <span class="role-badge role-bhw" aria-label="Barangay Health Worker">BHW</span>
+                        </div>
+                    </div>
+                    <div class="member-phone"><i class="fas fa-phone" aria-hidden="true"></i> <span class="phone-number">0977 142 8227</span></div>
+                    
+                </div>
+
+                <div class="team-member">
+                    <div class="member-header">
+                        <div class="member-avatar" aria-hidden="true">MJ</div>
+                        <div class="member-info">
+                            <div class="member-name">BHW Maricel Jimenez</div>
+                            <span class="role-badge role-bhw" aria-label="Barangay Health Worker">BHW</span>
+                        </div>
+                    </div>
+                    <div class="member-phone"><i class="fas fa-phone" aria-hidden="true"></i> <span class="phone-number">0967 550 3616</span></div>
+                    
+                </div>
+
+                <div class="team-member">
+                    <div class="member-header">
+                        <div class="member-avatar" aria-hidden="true">RC</div>
+                        <div class="member-info">
+                            <div class="member-name">BHW Rochelle Cruz</div>
+                            <span class="role-badge role-bhw" aria-label="Barangay Health Worker">BHW</span>
+                        </div>
+                    </div>
+                    <div class="member-phone"><i class="fas fa-phone" aria-hidden="true"></i> <span class="phone-number">0953 904 5972</span></div>
+                    
+                </div>
+
+                <div class="team-member">
+                    <div class="member-header">
+                        <div class="member-avatar" aria-hidden="true">EM</div>
+                        <div class="member-info">
+                            <div class="member-name">BHW Elma Miranda</div>
+                            <span class="role-badge role-bhw" aria-label="Barangay Health Worker">BHW</span>
+                        </div>
+                    </div>
+                    <div class="member-phone"><i class="fas fa-phone" aria-hidden="true"></i> <span class="phone-number">0935 108 9986</span></div>
+                    
+                </div>
+
+                <div class="team-member">
+                    <div class="member-header">
+                        <div class="member-avatar" aria-hidden="true">AA</div>
+                        <div class="member-info">
+                            <div class="member-name">BHW Aireen Ayroso</div>
+                            <span class="role-badge role-bhw" aria-label="Barangay Health Worker">BHW</span>
+                        </div>
+                    </div>
+                    <div class="member-phone"><i class="fas fa-phone" aria-hidden="true"></i> <span class="phone-number">0966 930 3091</span></div>
+                    
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section class="image-cards scroll-animate">
+        <div class="container">
+            <h3 class="section-title">OUR MISSION AND VISION</h3>
+            <div class="cards-grid">
+                <article class="image-card scroll-animate delay-1">
+                    <div class="card-image">
+                        <img src="/images/Mission.jpg" alt="Community outreach activities">
+                    </div>
+                </article>
+
+                <article class="image-card scroll-animate delay-2">
+                    <div class="card-image">
+                        <img src="/images/Vision.jpg" alt="Health and safety services">
+                    </div>
+                </article>
+            </div>
+            <article class="landscape-card scroll-animate delay-3" aria-label="Barangay Programs Highlight">
+                <div class="card-image">
+                    <img src="/images/members.jpg" alt="Highlights of barangay programs">
+                </div>
+                <div class="card-body">
+                    <h4 class="card-title">Barangay Teams</h4>
+                    <p class="card-text">
+                        We assure the community that our dedicated teams are committed to delivering efficient and compassionate services to enhance the well-being of all residents.
+                        We strive to foster a safe, healthy, and thriving environment through our various programs and initiatives.
+                    </p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section scroll-animate delay-3">
+                    <h3>Contact Info</h3>
+                    <ul>
+                        <li><i class="fas fa-map-marker-alt"></i> Barangay Malimba Gapan, City, Nueva Ecija</li>
+                        <li><i class="fas fa-phone"></i> +63 915 351 1681</li>
+                        <li><i class="fas fa-envelope"></i> sheenkahlie@gmail.com</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Barangay Malimba. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            // Create medical-themed background elements
+            function createMedicalBackground() {
+                const bg = document.getElementById('medical-bg');
+                const medicalIcons = ['fas fa-heartbeat', 'fas fa-stethoscope', 'fas fa-plus-square', 
+                                    'fas fa-user-md', 'fas fa-clinic-medical', 'fas fa-ambulance',
+                                    'fas fa-prescription-bottle', 'fas fa-brain', 'fas fa-lungs'];
+                
+                // Create floating particles with different sizes and movements
+                for (let i = 0; i < 25; i++) {
+                    const particle = document.createElement('div');
+                    const sizeClass = ['small', 'medium', 'large'][Math.floor(Math.random() * 3)];
+                    particle.className = `medical-particle ${sizeClass}`;
+                    particle.style.left = `${Math.random() * 100}%`;
+                    particle.style.top = `${Math.random() * 100}%`;
+                    particle.style.animationDelay = `${Math.random() * 20}s`;
+                    particle.style.animationDuration = `${15 + Math.random() * 20}s`;
+                    bg.appendChild(particle);
+                }
+                
+                // Create medical icons with more dynamic movement
+                for (let i = 0; i < 12; i++) {
+                    const icon = document.createElement('i');
+                    icon.className = `medical-icon ${medicalIcons[Math.floor(Math.random() * medicalIcons.length)]}`;
+                    icon.style.left = `${Math.random() * 100}%`;
+                    icon.style.top = `${Math.random() * 100}%`;
+                    icon.style.animationDelay = `${Math.random() * 30}s`;
+                    icon.style.animationDuration = `${20 + Math.random() * 20}s`;
+                    bg.appendChild(icon);
+                }
+                
+                // Create pulse rings with varied timing
+                for (let i = 0; i < 8; i++) {
+                    const ring = document.createElement('div');
+                    ring.className = 'pulse-ring';
+                    ring.style.width = `${Math.random() * 200 + 100}px`;
+                    ring.style.height = ring.style.width;
+                    ring.style.left = `${Math.random() * 100}%`;
+                    ring.style.top = `${Math.random() * 100}%`;
+                    ring.style.animationDelay = `${Math.random() * 8}s`;
+                    ring.style.animationDuration = `${6 + Math.random() * 6}s`;
+                    bg.appendChild(ring);
+                }
+                
+                // Create wave lines for additional movement
+                for (let i = 0; i < 6; i++) {
+                    const wave = document.createElement('div');
+                    wave.className = 'wave-line';
+                    wave.style.width = `${Math.random() * 200 + 100}px`;
+                    wave.style.top = `${Math.random() * 100}%`;
+                    wave.style.animationDelay = `${Math.random() * 12}s`;
+                    wave.style.animationDuration = `${8 + Math.random() * 8}s`;
+                    bg.appendChild(wave);
+                }
+            }
+            
+            createMedicalBackground();
+            const hamburger = document.querySelector('.hamburger');
+            const navLinks = document.querySelector('.nav-links');
+            
+            if (hamburger) {
+                hamburger.addEventListener('click', function() {
+                    navLinks.classList.toggle('active');
+                });
+            }
+            
+            // Close mobile menu when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!event.target.closest('.nav-container') && navLinks.classList.contains('active')) {
+                    navLinks.classList.remove('active');
+                }
+            });
+            
+            // Scroll animations: match index.ejs behavior
+            const scrollElements = document.querySelectorAll('.scroll-animate');
+            let lastScrollTop = 0;
+            let isScrollingDown = true;
+
+            const elementInView = (el, dividend = 1) => {
+                const elementTop = el.getBoundingClientRect().top;
+                return elementTop <= (window.innerHeight || document.documentElement.clientHeight) / dividend;
+            };
+
+            const handleScrollDirection = () => {
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                isScrollingDown = scrollTop > lastScrollTop;
+                lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+            };
+
+            const displayScrollElement = (element) => {
+                element.classList.add('visible');
+                if (!isScrollingDown) {
+                    element.classList.add('up');
+                } else {
+                    element.classList.remove('up');
+                }
+            };
+
+            const hideScrollElement = (element) => {
+                element.classList.remove('visible');
+                if (!isScrollingDown) {
+                    element.classList.add('up');
+                }
+            };
+
+            const handleScrollAnimation = () => {
+                handleScrollDirection();
+                scrollElements.forEach((el) => {
+                    if (elementInView(el, 1.2)) {
+                        displayScrollElement(el);
+                    } else if (!elementInView(el, 3) && isScrollingDown) {
+                        hideScrollElement(el);
+                    }
+                });
+            };
+
+            window.addEventListener('scroll', handleScrollAnimation);
+            handleScrollAnimation();
+        });
+    </script>
+</body>
+</html>

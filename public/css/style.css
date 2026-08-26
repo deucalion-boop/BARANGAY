@@ -1,0 +1,965 @@
+:root {
+  --primary-color: #1c4aca;
+  --primary-dark: #0b3769;
+  --primary-light: #4a6ce9;
+  --light-bg: #f8f9fa;
+  --dark-text: #333;
+  --light-text: #fff;
+  --gray-light: #e9ecef;
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --accent-color: #4299e1;
+  --success-color: #48bb78;
+  --danger-color: #f56565;
+  --warning-color: #ed8936;
+}
+
+/*
+  Professional animated background utilities
+  Usage:
+    - Add the class `pro-bg` to a full-width container (e.g., .hero or body) to enable
+      the subtle animated gradient and decorative blurred blobs.
+    - Place up to three `.pro-blob` elements inside the container for accent shapes:
+        <div class="hero pro-bg">
+          <div class="pro-blob b1"></div>
+          <div class="pro-blob b2"></div>
+          <div class="pro-blob b3"></div>
+          ...content...
+        </div>
+
+    These styles are lightweight, CSS-only, and designed to be subtle and professional.
+*/
+
+/* Gradient background animation */
+.pro-bg {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(120deg, rgba(28,74,202,0.95) 0%, rgba(66,153,225,0.95) 50%, rgba(59,130,246,0.95) 100%);
+  color: var(--light-text);
+}
+
+.pro-bg::before {
+  content: '';
+  position: absolute;
+  inset: -30% -30% -30% -30%;
+  background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.03), transparent 10%), radial-gradient(circle at 80% 80%, rgba(0,0,0,0.04), transparent 15%);
+  z-index: 0;
+  pointer-events: none;
+  animation: pro-bg-shift 16s ease-in-out infinite;
+}
+
+@keyframes pro-bg-shift {
+  0% { transform: rotate(0deg) scale(1); filter: hue-rotate(0deg); }
+  50% { transform: rotate(3deg) scale(1.02); filter: hue-rotate(10deg); }
+  100% { transform: rotate(0deg) scale(1); filter: hue-rotate(0deg); }
+}
+
+/* Decorative blurred blobs */
+.pro-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(36px);
+  opacity: 0.55;
+  transform: translate3d(0,0,0);
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.pro-blob.b1 {
+  width: 420px;
+  height: 420px;
+  left: -8%;
+  top: -10%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  animation: blob-move-1 18s ease-in-out infinite;
+}
+
+.pro-blob.b2 {
+  width: 520px;
+  height: 520px;
+  right: -12%;
+  bottom: -8%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(0,0,0,0.02));
+  animation: blob-move-2 22s ease-in-out infinite;
+}
+
+.pro-blob.b3 {
+  width: 300px;
+  height: 300px;
+  left: 50%;
+  bottom: -14%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+  transform: translateX(-40%);
+  animation: blob-move-3 20s ease-in-out infinite;
+}
+
+@keyframes blob-move-1 {
+  0% { transform: translateY(0) translateX(0) scale(1); }
+  50% { transform: translateY(18px) translateX(10px) scale(1.03); }
+  100% { transform: translateY(0) translateX(0) scale(1); }
+}
+
+@keyframes blob-move-2 {
+  0% { transform: translateY(0) translateX(0) scale(1); }
+  50% { transform: translateY(-20px) translateX(-8px) scale(1.02); }
+  100% { transform: translateY(0) translateX(0) scale(1); }
+}
+
+@keyframes blob-move-3 {
+  0% { transform: translateY(0) translateX(0) scale(1); }
+  50% { transform: translateY(12px) translateX(6px) scale(1.015); }
+  100% { transform: translateY(0) translateX(0) scale(1); }
+}
+
+/* Reduce intensity on small screens */
+@media (max-width: 768px) {
+  .pro-blob { opacity: 0.35; filter: blur(28px); }
+  .pro-blob.b1 { width: 260px; height: 260px; left: -18%; top: -22%; }
+  .pro-blob.b2 { width: 320px; height: 320px; right: -22%; bottom: -18%; }
+  .pro-blob.b3 { width: 180px; height: 180px; left: 50%; bottom: -28%; }
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background-color: var(--light-bg);
+  color: var(--dark-text);
+  line-height: 1.6;
+}
+
+/* Smooth scrolling for in-page anchors */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Header & Navigation */
+header {
+  background-color: var(--primary-color);
+  color: var(--light-text);
+  padding: 1rem 0;
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.nav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 1.8rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+}
+
+.logo i {
+  margin-right: 10px;
+}
+
+.nav-links {
+  display: flex;
+  list-style: none;
+}
+
+.nav-links li {
+  margin-left: 1.5rem;
+}
+
+/* Base nav link styling (kept subtle to let brand button stand out) */
+.nav-links a {
+  position: relative;
+  color: rgba(255, 255, 255, 0.92);
+  text-decoration: none;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  padding: 0.55rem 0.9rem;
+  border-radius: 10px;
+}
+
+/* Hover state: subtle pill + underline */
+.nav-links a:not(.login-btn):hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* Active/current page: persistent pill highlight */
+.nav-links a:not(.login-btn).active {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16), 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* Keyboard focus for accessibility */
+.nav-links a:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+}
+
+.hamburger {
+  display: none;
+  cursor: pointer;
+  font-size: 1.5rem;
+}
+
+/* Consistent branding & login button (moved from index page for reuse) */
+/* Keep nav items aligned and allow the Login button to sit inline with links */
+.nav-links {
+  align-items: center;
+  gap: 1rem;
+}
+.nav-links li {
+  display: flex;
+  align-items: center;
+}
+.nav-links a {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Gradient pill Login button */
+.nav-links .login-btn {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  box-shadow: 0 6px 16px rgba(28, 74, 202, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.nav-links .login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(28, 74, 202, 0.35);
+}
+
+/* Optional brand helpers used on home page; harmless elsewhere */
+.brand-logo { height: 28px; width: auto; display: inline-block; }
+.brand-text { font-weight: 800; letter-spacing: 0.3px; }
+
+/* Hero Section */
+.hero {
+  background: linear-gradient(rgba(28, 74, 202, 0.8), rgba(11, 55, 105, 0.9)), url('/images/hero-bg.jpg') no-repeat center center/cover;
+  color: var(--light-text);
+  padding: 5rem 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-content {
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.hero h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.hero p {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Medical-themed animated background */
+.medical-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.medical-particle {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.15;
+  animation: float-medical 25s infinite ease-in-out;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.medical-particle.small {
+  width: 20px;
+  height: 20px;
+  animation-duration: 15s;
+  opacity: 0.1;
+}
+
+.medical-particle.medium {
+  width: 40px;
+  height: 40px;
+  animation-duration: 20s;
+  opacity: 0.15;
+}
+
+.medical-particle.large {
+  width: 60px;
+  height: 60px;
+  animation-duration: 25s;
+  opacity: 0.2;
+}
+
+.medical-icon {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.15);
+  font-size: 1.8rem;
+  animation: float-icon 30s infinite ease-in-out;
+  z-index: 1;
+}
+
+.pulse-ring {
+  position: absolute;
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  animation: pulse-medical 8s infinite ease-in-out;
+}
+
+.wave-line {
+  position: absolute;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.05);
+  animation: wave 12s infinite linear;
+  border-radius: 10px;
+}
+
+@keyframes float-medical {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+  10% {
+    transform: translate(20px, -15px) rotate(36deg) scale(1.1);
+  }
+  20% {
+    transform: translate(40px, 10px) rotate(72deg) scale(0.9);
+  }
+  30% {
+    transform: translate(20px, 30px) rotate(108deg) scale(1.2);
+  }
+  40% {
+    transform: translate(-20px, 40px) rotate(144deg) scale(0.8);
+  }
+  50% {
+    transform: translate(-40px, 20px) rotate(180deg) scale(1.1);
+  }
+  60% {
+    transform: translate(-30px, -20px) rotate(216deg) scale(0.9);
+  }
+  70% {
+    transform: translate(-10px, -40px) rotate(252deg) scale(1.3);
+  }
+  80% {
+    transform: translate(30px, -30px) rotate(288deg) scale(0.7);
+  }
+  90% {
+    transform: translate(40px, -10px) rotate(324deg) scale(1.1);
+  }
+}
+
+@keyframes float-icon {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    opacity: 0.15;
+  }
+  25% {
+    transform: translate(60px, -40px) rotate(90deg) scale(1.2);
+    opacity: 0.25;
+  }
+  50% {
+    transform: translate(20px, -80px) rotate(180deg) scale(0.8);
+    opacity: 0.15;
+  }
+  75% {
+    transform: translate(-60px, -40px) rotate(270deg) scale(1.3);
+    opacity: 0.3;
+  }
+}
+
+@keyframes pulse-medical {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.08;
+  }
+  25% {
+    transform: scale(1.1);
+    opacity: 0.12;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.04;
+  }
+  75% {
+    transform: scale(1.15);
+    opacity: 0.1;
+  }
+}
+
+@keyframes wave {
+  0% {
+    transform: translateX(-100%) scaleY(1);
+    opacity: 0.05;
+  }
+  50% {
+    transform: translateX(100%) scaleY(1.5);
+    opacity: 0.1;
+  }
+  100% {
+    transform: translateX(300%) scaleY(1);
+    opacity: 0.05;
+  }
+}
+
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  transition: background-color 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  opacity: 0;
+  visibility: hidden;
+}
+
+.modal.active {
+  display: flex;
+  background-color: rgba(0, 0, 0, 0.6);
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-content {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  padding: 2.5rem;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 420px;
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  position: relative;
+  transform: translateY(30px) scale(0.95);
+  opacity: 0;
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.modal.active .modal-content {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+.modal-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.modal-icon {
+  width: 70px;
+  height: 70px;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  color: white;
+  font-size: 1.8rem;
+  box-shadow: 0 8px 20px rgba(28, 74, 202, 0.3);
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.close-modal {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #999;
+  transition: all 0.3s ease;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.close-modal:hover {
+  color: #333;
+  background: rgba(0, 0, 0, 0.1);
+  transform: rotate(90deg);
+}
+
+.login-form {
+  margin-top: 1rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  color: #555;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.form-group input {
+  width: 100%;
+  /* extra right padding so text doesn't overlap the right icon */
+  padding: 1rem 2.75rem 1rem 1.25rem;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 
+    0 0 0 4px rgba(28, 74, 202, 0.1),
+    0 5px 15px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.input-icon {
+  position: absolute;
+  right: 1.25rem;
+  top: 50%;
+  /* center the icon vertically within the input */
+  transform: translateY(-50%);
+  color: #999;
+  transition: color 0.3s ease;
+}
+
+.form-group input:focus ~ .input-icon {
+  color: var(--primary-color);
+}
+
+.login-submit {
+  width: 100%;
+  padding: 1.1rem;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(28, 74, 202, 0.3);
+}
+
+.login-submit:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(28, 74, 202, 0.4);
+}
+
+.login-submit:active {
+  transform: translateY(-1px);
+}
+
+.login-submit::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.login-submit:hover::before {
+  left: 100%;
+}
+
+.form-footer {
+  text-align: center;
+  margin-top: 2rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.form-footer a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.form-footer a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--primary-color);
+  transition: width 0.3s ease;
+}
+
+.form-footer a:hover {
+  color: var(--primary-dark);
+}
+
+.form-footer a:hover::after {
+  width: 100%;
+}
+
+.modal-title {
+  color: #2d3748;
+  margin-bottom: 0.5rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.modal-subtitle {
+  color: #718096;
+  font-size: 1rem;
+  margin-bottom: 0;
+}
+
+/* Alert message styles */
+.alert-message {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  display: none;
+  text-align: center;
+  font-weight: 500;
+}
+
+.alert-error {
+  background: #fed7d7;
+  color: #c53030;
+  border: 1px solid #feb2b2;
+}
+
+.alert-success {
+  background: #c6f6d5;
+  color: #276749;
+  border: 1px solid #9ae6b4;
+}
+
+/* Modal type specific styles */
+.resident-modal .modal-icon {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+}
+
+.admin-modal .modal-icon {
+  background: linear-gradient(135deg, var(--primary-dark), #071f3f);
+}
+
+.admin-modal .login-submit {
+  background: linear-gradient(135deg, var(--primary-dark), #071f3f);
+  box-shadow: 0 5px 15px rgba(11, 55, 105, 0.3);
+}
+
+.admin-modal .login-submit:hover {
+  box-shadow: 0 8px 25px rgba(11, 55, 105, 0.4);
+}
+
+.admin-modal .form-group input:focus {
+  border-color: var(--primary-dark);
+  box-shadow: 0 0 0 4px rgba(11, 55, 105, 0.1), 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.admin-modal .form-footer a {
+  color: var(--primary-dark);
+}
+
+.admin-modal .form-footer a:hover {
+  color: #071f3f;
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  background-color: var(--light-text);
+  color: var(--primary-color);
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  text-align: center;
+}
+
+.btn:hover {
+  background-color: var(--primary-dark);
+  color: var(--light-text);
+}
+
+.btn-primary {
+  background-color: var(--primary-dark);
+  color: var(--light-text);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-light);
+}
+
+/* Features Section */
+.features {
+  padding: 5rem 0;
+}
+
+.section-title {
+  text-align: center;
+  margin-bottom: 3rem;
+  color: var(--primary-color);
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.feature-card {
+  background-color: var(--light-text);
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+}
+
+.feature-icon {
+  font-size: 3rem;
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+}
+
+.feature-card h3 {
+  margin-bottom: 1rem;
+  color: var(--primary-color);
+}
+
+/* Login Options */
+.login-options {
+  background-color: var(--gray-light);
+  padding: 4rem 0;
+  text-align: center;
+}
+
+.login-cards {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+}
+
+.login-card {
+  background-color: var(--light-text);
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  width: 300px;
+  transition: transform 0.3s ease;
+}
+
+.login-card:hover {
+  transform: translateY(-5px);
+}
+
+.login-card h3 {
+  margin-bottom: 1rem;
+  color: var(--primary-color);
+}
+
+/* Footer */
+footer {
+  background-color: var(--primary-dark);
+  color: var(--light-text);
+  padding: 3rem 0 1rem;
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.footer-section h3 {
+  margin-bottom: 1rem;
+  border-bottom: 2px solid var(--primary-light);
+  padding-bottom: 0.5rem;
+}
+
+.footer-section ul {
+  list-style: none;
+}
+
+.footer-section ul li {
+  margin-bottom: 0.5rem;
+}
+
+.footer-section a {
+  color: var(--light-text);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.footer-section a:hover {
+  color: var(--primary-light);
+}
+
+.footer-bottom {
+  text-align: center;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Scroll Animation */
+.scroll-animate {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.6s ease-out;
+}
+
+.scroll-animate.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.scroll-animate.delay-1 { transition-delay: 0.1s; }
+.scroll-animate.delay-2 { transition-delay: 0.2s; }
+.scroll-animate.delay-3 { transition-delay: 0.3s; }
+.scroll-animate.delay-4 { transition-delay: 0.4s; }
+.scroll-animate.delay-5 { transition-delay: 0.5s; }
+.scroll-animate.delay-6 { transition-delay: 0.6s; }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .nav-links {
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background-color: var(--primary-color);
+    padding: 1rem 0;
+  }
+  
+  .nav-links.active {
+    display: flex;
+  }
+  
+  .nav-links li {
+    margin: 0;
+    text-align: center;
+  }
+  
+  .nav-links a {
+    display: block;
+    padding: 0.95rem 1.1rem;
+    border-radius: 8px;
+  }
+  
+  .hamburger {
+    display: block;
+  }
+  
+  .hero h1 {
+    font-size: 2.2rem;
+  }
+  
+  .hero p {
+    font-size: 1rem;
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .login-cards {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .hero-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .hero-buttons .btn {
+    width: 100%;
+    max-width: 250px;
+  }
+  
+  .modal-content {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+}
+
+/* Ensure input icons are positioned relative to the input itself */
+.input-wrap {
+  position: relative;
+}

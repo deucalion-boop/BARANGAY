@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title><%= title %></title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/user.css">
+  <style>
+    .card { background: var(--white); padding: 1.25rem; border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 1.5rem; }
+    .settings-grid { display:grid; gap:1.5rem; grid-template-columns: 1fr; max-width: 800px; }
+    .field { display:flex; align-items:center; justify-content:space-between; border:1px solid #e2e8f0; border-radius:10px; padding:.75rem 1rem; margin-bottom: 1rem; }
+    .field .label { color:#334155; font-weight:600; }
+    .muted { color:#64748b; font-size:.9rem; }
+    .btn { padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; transition: all 0.2s; }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-secondary { background: #e2e8f0; color: #334155; }
+    .btn-secondary:hover { background: #cbd5e1; }
+    .btn-danger { background: #ef4444; color: white; }
+    .btn-danger:hover { background: #dc2626; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #334155; }
+    .form-control { width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem; }
+    .form-control:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+    
+    .profile-pic-container { display: flex; align-items: center; margin-bottom: 1.5rem; }
+    .profile-pic { width: 80px; height: 80px; border-radius: 50%; background: #3b82f6; color: white; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; margin-right: 1rem; }
+    .profile-pic img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-content { background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    .modal-title { font-size: 1.25rem; font-weight: 700; margin: 0; }
+    .close-modal { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; }
+    
+    .danger-zone { border: 1px solid #fecaca; background: #fef2f2; padding: 1.5rem; border-radius: 10px; }
+    .danger-zone h4 { color: #dc2626; margin-top: 0; }
+    .danger-zone p { color: #7f1d1d; margin-bottom: 1rem; }
+    .action-buttons { display: flex; gap: 0.75rem; margin-top: 1rem; }
+    .edit-btn { background: none; border: none; color: #3b82f6; cursor: pointer; font-size: 0.9rem; }
+    .edit-btn:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    <aside class="sidebar" role="navigation" aria-label="User navigation">
+      <div class="sidebar-header">
+        <h2><i class="fas fa-home"></i><span>Barangay</span></h2>
+        <button class="toggle-btn" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+        <div style="font-size:.9rem; opacity:.9; margin-top:.5rem;">Resident Dashboard</div>
+      </div>
+      <ul class="sidebar-menu">
+        <li><a href="/users/dashboard" data-tooltip="Dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+        <li><a href="/users/announcements" data-tooltip="Announcements"><i class="fas fa-bullhorn"></i><span>Announcements</span></a></li>
+        <li><a href="/users/schedule" data-tooltip="Schedule"><i class="fas fa-calendar-alt"></i><span>Schedule</span></a></li>
+        <li><a id="logout-btn" href="/users/logout" data-tooltip="Logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
+      </ul>
+    </aside>
+    <div class="overlay"></div>
+
+    <main class="main-content">
+      <div class="header">
+        <h1>Account Settings</h1>
+        <div class="user-info" style="display:flex; flex-direction:column; align-items:flex-end; gap:.25rem;">
+          <div class="header-identity" style="display:flex; align-items:center; gap:.35rem;">
+            <div class="user-avatar" id="header-avatar">
+              <% if (user.avatarUrl && user.avatarUrl.length) { %>
+                <img src="<%= user.avatarUrl %>" alt="Profile" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />
+              <% } else { %>
+                <%= (user.name && user.name.length) ? user.name.charAt(0).toUpperCase() : 'U' %>
+              <% } %>
+            </div>
+            <span id="user-name-label" style="font-weight:700;"><%= user.name %></span>
+          </div>
+          <div id="user-email-purok" style="font-size:.9rem; color:var(--text-light);"><%= user.email %> | Purok <%= user.unitNumber %></div>
+        </div>
+      </div>
+
+      <div class="settings-grid">
+        <!-- Profile Information Card -->
+        <div class="card">
+          <h3 style="margin-top:0">Profile Information</h3>
+          <div class="profile-pic-container">
+            <div class="profile-pic" id="profile-pic">
+              <% if (user.avatarUrl && user.avatarUrl.length) { %>
+                <img src="<%= user.avatarUrl %>" alt="Profile" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />
+              <% } else { %>
+                <%= (user.name && user.name.length) ? user.name.charAt(0).toUpperCase() : 'U' %>
+              <% } %>
+            </div>
+            <div>
+              <input type="file" id="photo-input" accept="image/*" style="display:none" />
+              <button class="btn btn-secondary" id="change-photo-btn">Change Photo</button>
+              <p class="muted" style="margin-top: 0.5rem;">JPG, GIF or PNG. Max size of 2MB.</p>
+            </div>
+          </div>
+          <div class="field">
+            <span class="label">Name</span>
+            <div>
+              <span class="muted" id="name-display"><%= user.name %></span>
+              <button class="edit-btn" data-field="name">Edit</button>
+            </div>
+          </div>
+          <div class="field">
+            <span class="label">Email</span>
+            <div>
+              <span class="muted"><%= user.email %></span>
+            </div>
+          </div>
+          <div class="field">
+            <span class="label">Purok</span>
+            <span class="muted"><%= user.unitNumber %></span>
+          </div>
+          <div class="field">
+            <span class="label">Phone Number</span>
+            <div>
+              <span class="muted" id="phone-display"><%= user.phone && user.phone.length ? user.phone : 'Not set' %></span>
+              <button class="edit-btn" data-field="phone">Edit</button>
+            </div>
+          </div>
+          <div class="field">
+            <span class="label">Address</span>
+            <div>
+              <span class="muted" id="address-display"><%= user.address && user.address.length ? user.address : 'Not set' %></span>
+              <button class="edit-btn" data-field="address">Edit</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Password Change Card -->
+        <div class="card">
+          <h3 style="margin-top:0">Password</h3>
+          <p class="muted" style="margin-bottom: 1rem;">Update your password to keep your account secure.</p>
+          <button class="btn btn-primary" id="change-password-btn">Change Password</button>
+        </div>
+
+        
+
+        <!-- Danger Zone Card -->
+        <div class="card danger-zone">
+          <h4 style="margin-top:0">Danger Zone</h4>
+          <p>Once you delete your account, there is no going back. Please be certain.</p>
+          <button class="btn btn-danger" id="delete-account-btn">Delete Account</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Change Password Modal -->
+  <div class="modal" id="password-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Change Password</h3>
+        <button class="close-modal">&times;</button>
+      </div>
+      <form id="password-form">
+        <div class="form-group">
+          <label for="current-password">Current Password</label>
+          <input type="password" id="current-password" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="new-password">New Password</label>
+          <input type="password" id="new-password" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="confirm-password">Confirm New Password</label>
+          <input type="password" id="confirm-password" class="form-control" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Field Modal -->
+  <div class="modal" id="edit-field-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="edit-modal-title">Edit Field</h3>
+        <button class="close-modal">&times;</button>
+      </div>
+      <form id="edit-field-form">
+        <div class="form-group">
+          <label id="edit-field-label">Field</label>
+          <input type="text" id="edit-field-input" class="form-control" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Account Modal -->
+  <div class="modal" id="delete-account-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Delete Account</h3>
+        <button class="close-modal">&times;</button>
+      </div>
+      <p>Are you sure you want to delete your account? This action cannot be undone.</p>
+      <div class="form-group">
+        <label for="confirm-delete">Type "DELETE" to confirm</label>
+        <input type="text" id="confirm-delete" class="form-control" required>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirm-delete-btn" disabled>Delete Account</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/user.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Modal functionality
+      const modals = document.querySelectorAll('.modal');
+      const closeButtons = document.querySelectorAll('.close-modal');
+      
+      // Open modals
+      document.getElementById('change-password-btn').addEventListener('click', function() {
+        document.getElementById('password-modal').style.display = 'flex';
+      });
+      
+      document.getElementById('delete-account-btn').addEventListener('click', function() {
+        document.getElementById('delete-account-modal').style.display = 'flex';
+      });
+      
+      // Edit field buttons
+      document.querySelectorAll('.edit-btn').forEach(button => {
+        button.addEventListener('click', function() {
+          const field = this.getAttribute('data-field');
+          const modal = document.getElementById('edit-field-modal');
+          const title = document.getElementById('edit-modal-title');
+          const label = document.getElementById('edit-field-label');
+          const input = document.getElementById('edit-field-input');
+          
+          // Set modal content based on field
+          switch(field) {
+            case 'name':
+              title.textContent = 'Edit Name';
+              label.textContent = 'Full Name';
+              {
+                const nameEl = document.getElementById('name-display');
+                input.value = nameEl ? nameEl.textContent : '';
+              }
+              break;
+            case 'email':
+              title.textContent = 'Edit Email';
+              label.textContent = 'Email Address';
+              input.value = document.querySelector('.field:nth-child(3) .muted').textContent;
+              break;
+            case 'phone':
+              title.textContent = 'Edit Phone Number';
+              label.textContent = 'Phone Number';
+              input.value = document.getElementById('phone-display').textContent === 'Not set' ? '' : document.getElementById('phone-display').textContent;
+              break;
+            case 'address':
+              title.textContent = 'Edit Address';
+              label.textContent = 'Full Address';
+              input.value = document.getElementById('address-display').textContent === 'Not set' ? '' : document.getElementById('address-display').textContent;
+              break;
+          }
+          
+          // Store which field we're editing
+          input.setAttribute('data-field', field);
+          modal.style.display = 'flex';
+        });
+      });
+      
+      // Close modals
+      closeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          modals.forEach(modal => {
+            modal.style.display = 'none';
+          });
+        });
+      });
+      
+      // Close modal when clicking outside
+      modals.forEach(modal => {
+        modal.addEventListener('click', function(e) {
+          if (e.target === modal) {
+            modal.style.display = 'none';
+          }
+        });
+      });
+      
+      // Password form submission
+      document.getElementById('password-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const currentPassword = document.getElementById('current-password').value;
+        const newPassword = document.getElementById('new-password').value;
+        const confirmPassword = document.getElementById('confirm-password').value;
+        
+        if (newPassword !== confirmPassword) {
+          alert('New passwords do not match');
+          return;
+        }
+        
+        try {
+          const resp = await fetch('/users/settings/password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ currentPassword, newPassword })
+          });
+          const data = await resp.json();
+          if (!data.success) {
+            alert(data.message || 'Failed to update password');
+            return;
+          }
+          alert('Password updated successfully!');
+          document.getElementById('password-modal').style.display = 'none';
+          this.reset();
+        } catch (err) {
+          alert('Failed to update password');
+        }
+      });
+      
+      // Edit field form submission
+      document.getElementById('edit-field-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const field = document.getElementById('edit-field-input').getAttribute('data-field');
+        const value = document.getElementById('edit-field-input').value;
+        const payload = {};
+        if (field === 'name') payload.name = value;
+        if (field === 'email') payload.email = value;
+        if (field === 'phone') payload.phone = value;
+        if (field === 'address') payload.address = value;
+
+        try {
+          const resp = await fetch('/users/settings/profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await resp.json();
+          if (!data.success) {
+            alert(data.message || 'Failed to update');
+            return;
+          }
+          // Update the display based on field
+          switch(field) {
+            case 'name':
+              const nameDisplay = document.getElementById('name-display');
+              if (nameDisplay) nameDisplay.textContent = data.user.name;
+              // Update header name label
+              const nameEl = document.getElementById('user-name-label');
+              if (nameEl) nameEl.textContent = data.user.name;
+              // Update header avatar initial if no image
+              const headerAvatar = document.getElementById('header-avatar');
+              if (headerAvatar && !headerAvatar.querySelector('img')) {
+                headerAvatar.textContent = data.user.name.charAt(0).toUpperCase();
+              }
+              // Update large profile circle initial if no image
+              const profilePic = document.getElementById('profile-pic');
+              if (profilePic && !profilePic.querySelector('img')) {
+                profilePic.textContent = data.user.name.charAt(0).toUpperCase();
+              }
+              break;
+            case 'email':
+              document.querySelector('.field:nth-child(3) .muted').textContent = data.user.email;
+              const emailEl = document.getElementById('user-email-purok');
+              if (emailEl) emailEl.textContent = data.user.email + ' | Purok <%= user.unitNumber %>';
+              break;
+            case 'phone':
+              document.getElementById('phone-display').textContent = data.user.phone || value;
+              break;
+            case 'address':
+              document.getElementById('address-display').textContent = data.user.address || value;
+              break;
+          }
+          alert('Information updated successfully!');
+          document.getElementById('edit-field-modal').style.display = 'none';
+        } catch (err) {
+          alert('Failed to update');
+        }
+      });
+      
+      // Delete account confirmation
+      document.getElementById('confirm-delete').addEventListener('input', function() {
+        document.getElementById('confirm-delete-btn').disabled = this.value !== 'DELETE';
+      });
+      
+      document.getElementById('confirm-delete-btn').addEventListener('click', async function() {
+        if (document.getElementById('confirm-delete').value === 'DELETE') {
+          try {
+            const resp = await fetch('/users/settings/delete-account', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ confirm: 'DELETE' })
+            });
+            const data = await resp.json();
+            if (!data.success) {
+              alert(data.message || 'Failed to delete account');
+              return;
+            }
+            alert('Account deleted. You will be redirected.');
+            window.location.href = '/';
+          } catch (err) {
+            alert('Failed to delete account');
+          }
+        }
+      });
+      
+      // Change photo upload
+      document.getElementById('change-photo-btn').addEventListener('click', function() {
+        document.getElementById('photo-input').click();
+      });
+      document.getElementById('photo-input').addEventListener('change', async function() {
+        if (!this.files || !this.files[0]) return;
+        const formData = new FormData();
+        formData.append('photo', this.files[0]);
+        try {
+          const resp = await fetch('/users/settings/photo', { method: 'POST', body: formData });
+          const data = await resp.json();
+          if (!data.success) {
+            alert(data.message || 'Upload failed');
+            return;
+          }
+          // Render preview
+          const pic = document.getElementById('profile-pic');
+          pic.innerHTML = `<img src="${data.avatarUrl}" alt="Profile" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />`;
+          // Update header avatar image as well
+          const headerAvatar = document.getElementById('header-avatar');
+          if (headerAvatar) {
+            headerAvatar.innerHTML = `<img src="${data.avatarUrl}" alt="Profile" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />`;
+          }
+        } catch (err) {
+          alert('Upload failed');
+        } finally {
+          this.value = '';
+        }
+      });
+    });
+  </script>
+</body>
+</html>

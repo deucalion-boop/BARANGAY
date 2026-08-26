@@ -1,0 +1,2453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule Management - Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="/css/admin.css">
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.css' rel='stylesheet' />
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+<style>
+    /* Stats Container */
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+        background: var(--white);
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .stat-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        color: var(--white);
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    /* Shine effect on hover */
+    .stat-icon::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(
+            45deg,
+            transparent,
+            rgba(255, 255, 255, 0.2),
+            transparent
+        );
+        transform: rotate(45deg);
+        transition: transform 0.5s ease;
+    }
+
+    .stat-icon:hover::before {
+        transform: rotate(45deg) translate(70%, 70%);
+    }
+
+    .stat-icon:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Specific icon styles */
+    .stat-icon.total {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+    }
+
+    .stat-icon.pending {
+        background: linear-gradient(135deg, #f56565, #c53030);
+    }
+
+    .stat-icon.completed {
+        background: linear-gradient(135deg, #48bb78, #38a169);
+    }
+
+    .stat-icon.scheduled {
+        background: linear-gradient(135deg, #4299e1, #3182ce);
+    }
+
+    .stat-info {
+        flex: 1;
+    }
+
+    .stat-number {
+        font-size: 1.75rem;
+        font-weight: bold;
+        color: var(--primary-dark);
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-label {
+        color: var(--text-light);
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        background: var(--white);
+        padding: 1rem;
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+    }
+
+    .tab-btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        background: transparent;
+        color: var(--text-light);
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .tab-btn.active {
+        background: linear-gradient(135deg, var(--accent-color), #2563eb);
+        color: var(--white);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .tab-btn:hover:not(.active) {
+        background: rgba(0,0,0,0.05);
+        color: var(--text-dark);
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    /* Calendar Styles */
+    .calendar-container {
+        background: var(--white);
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        margin-bottom: 1.5rem;
+    }
+
+    #calendar {
+        max-width: 100%;
+        margin: 0 auto;
+    }
+
+    .fc {
+        font-family: inherit;
+    }
+
+    .fc-button {
+        background: linear-gradient(135deg, var(--accent-color), #2563eb) !important;
+        border: none !important;
+        padding: 0.5rem 1rem !important;
+        font-weight: 600 !important;
+        transition: all 0.3s ease !important;
+    }
+
+    .fc-button:hover {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+        transform: translateY(-2px);
+    }
+
+    .fc-button:disabled {
+        opacity: 0.6 !important;
+    }
+
+    .fc-event {
+        cursor: pointer;
+        border: none !important;
+        padding: 2px 4px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+    }
+
+    .fc-event:hover {
+        opacity: 0.8;
+    }
+
+    .fc-daygrid-event {
+        white-space: normal;
+    }
+
+    .fc-toolbar-title {
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        color: var(--primary-dark);
+    }
+
+    .fc-col-header-cell {
+        background: var(--light-bg);
+        font-weight: 600;
+        padding: 0.75rem 0 !important;
+    }
+
+    .fc-day-today {
+        background: rgba(59, 130, 246, 0.1) !important;
+    }
+
+    .filters {
+        background: var(--white);
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-group {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: end;
+    }
+
+    .filter-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        flex: 1;
+        min-width: 150px;
+    }
+
+    .filter-item label {
+        font-weight: 600;
+        color: var(--text-dark);
+        font-size: 0.9rem;
+    }
+
+    .filter-item select,
+    .filter-item input {
+        padding: 0.5rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        background: var(--white);
+        font-size: 0.9rem;
+    }
+
+    /* Enhanced Button Styles */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.25rem;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        min-height: 42px;
+    }
+
+    .btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .btn:hover::before {
+        left: 100%;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+    }
+
+    .btn:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+
+    .btn:disabled, .btn[disabled] {
+        opacity: 0.6;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+    }
+
+    .btn-sm {
+        padding: 0.6rem 1rem;
+        font-size: 0.85rem;
+        min-height: 36px;
+    }
+
+    /* Button Variants */
+    .btn-primary {
+        background: linear-gradient(135deg, var(--accent-color), #2563eb);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, #6b7280, #4b5563);
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: linear-gradient(135deg, #9ca3af, #6b7280);
+    }
+
+    .btn-success { 
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: linear-gradient(135deg, #34d399, #10b981);
+    }
+
+    .btn-danger { 
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: linear-gradient(135deg, #f87171, #ef4444);
+    }
+
+    .btn-warning { 
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: rgb(255, 255, 255);
+    }
+
+    .btn-warning:hover {
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    }
+
+    /* Make warning buttons more compact (no markup change needed) */
+    .modal-actions .btn-warning {
+        padding: 0.55rem 0.9rem;
+        font-size: 0.85rem;
+        min-height: 36px;
+    }
+
+    /* Also compact success approve button in modals */
+    .modal-actions .btn-success {
+        padding: 0.55rem 0.9rem;
+        font-size: 0.85rem;
+        min-height: 36px;
+    }
+
+    /* Make action buttons icon-only; show label via tooltip */
+    .action-buttons .btn {
+        font-size: 0; /* hide text but keep icon visible */
+        padding: 0.5rem; /* compact padding for icon buttons */
+        min-height: 36px;
+        position: relative;
+    }
+    .action-buttons .btn i { font-size: 14px; }
+    .action-buttons .btn[data-label]::after,
+    .action-buttons .btn[title]::after {
+        content: attr(data-label);
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 50%;
+        transform: translateX(-50%) translateY(4px);
+        background: rgba(17, 24, 39, 0.95);
+        color: #fff;
+        padding: 6px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.15s ease, transform 0.15s ease;
+        z-index: 20;
+    }
+    .action-buttons .btn[title]::after { content: attr(title); }
+    .action-buttons .btn:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Enhanced Table Container */
+    .table-container {
+        width: 100%;
+        overflow: hidden;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: var(--white);
+        margin-bottom: 1.5rem;
+    }
+
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        position: relative;
+    }
+
+    .table-responsive table {
+        width: 100%;
+        min-width: 800px;
+        border-collapse: collapse;
+        margin: 0;
+        table-layout: fixed; /* ensure consistent column widths per colgroup */
+    }
+
+    /* Improved Table Styles */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+    }
+
+    th {
+        background: var(--light-bg);
+        font-weight: 600;
+        color: var(--text-dark);
+        padding: 0.875rem 1rem;
+        text-align: left;
+        border-bottom: 2px solid #e2e8f0;
+        white-space: nowrap;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
+    }
+    /* Text Ellipsis for Long Content */
+    td {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Override generic max-width inside the responsive table to honor colgroup widths */
+    .table-responsive table td {
+        max-width: unset;
+    }
+    .table-responsive table td:first-child,
+    .table-responsive table td:nth-child(2),
+    .table-responsive table td:nth-child(3),
+    .table-responsive table td:nth-child(4) {
+        max-width: unset;
+    }
+
+    tr:last-child td {
+        border-bottom: none;
+    }
+
+    tr:hover {
+        background: #f8fafc;
+    }
+
+    /* Improved Status Badges */
+    .status-badge {
+        display: inline-block;
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        min-width: 70px;
+        text-align: center;
+    }
+
+    .status-pending { 
+        background: #fffaf0; 
+        color: var(--warning-color);
+        border: 1px solid #fed7d7;
+    }
+    .status-scheduled { 
+        background: #ebf8ff; 
+        color: var(--accent-color);
+        border: 1px solid #bee3f8;
+    }
+    .status-completed { 
+        background: #f0fff4; 
+        color: var(--success-color);
+        border: 1px solid #9ae6b4;
+    }
+    .status-reschedule { 
+        background: #fff5f5; 
+        color: var(--warning-color);
+        border: 1px solid #fed7d7;
+    }
+    .status-no-show { 
+        background: #f7fafc; 
+        color: var(--text-light);
+        border: 1px solid #e2e8f0;
+    }
+    .status-expired { 
+        background: #fff5f5; 
+        color: #c53030;
+        border: 1px solid #fed7d7;
+    }
+
+    /* Expiry warning styles */
+    .expiry-warning {
+        background: #fffaf0;
+        color: #c05621;
+        border: 1px solid #fed7d7;
+    }
+    .expiry-normal {
+        background: #f0f9ff;
+        color: #3182ce;
+        border: 1px solid #bee3f8;
+    }
+
+    .type-badge {
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        background: #f7fafc;
+        color: var(--text-dark);
+        text-transform: capitalize;
+        border: 1px solid #e2e8f0;
+    }
+
+    /* Improved Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: nowrap;
+        justify-content: center; /* keep action buttons centered in the cell */
+        align-items: center;
+        min-width: 120px; /* give more room so buttons aren't cramped */
+    }
+
+    .action-buttons .btn {
+        min-width: 36px;
+        max-width: 36px;
+        justify-content: center;
+        flex: 0 0 auto;
+    }
+
+    .action-buttons .btn i {
+        opacity: 0.9;
+        transition: transform 0.2s ease;
+    }
+
+    .action-buttons .btn:hover i {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+
+    /* Fix Actions column width and alignment across rows */
+    .table-responsive table th:last-child,
+    .table-responsive table td:last-child {
+        width: 120px;
+        min-width: 120px;
+        text-align: center;
+        white-space: nowrap; /* keep single-line buttons */
+    }
+
+    /* Column widths via colgroup classes */
+    .table-responsive table col.col-patient { width: 24%; }
+    .table-responsive table col.col-datetime { width: 16%; }
+    .table-responsive table col.col-type { width: 10%; }
+    .table-responsive table col.col-status { width: 10%; }
+    .table-responsive table col.col-notes { width: 30%; }
+    .table-responsive table col.col-actions { width: 200px; }
+
+    /* Icon animations */
+    .btn:hover i.fa-arrow-right,
+    .btn:hover i.fa-chevron-right {
+        transform: translateX(2px);
+    }
+
+    /* Filter buttons */
+    .filter-item .btn {
+        margin-top: 0.5rem;
+    }
+
+    /* Text Ellipsis for Long Content */
+    td {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    td:first-child {
+        max-width: 150px;
+    }
+
+    td:nth-child(2) {
+        max-width: 180px;
+    }
+
+    td:nth-child(3) {
+        max-width: 120px;
+    }
+
+    td:nth-child(4) {
+        max-width: 130px;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+    }
+
+    .modal-content {
+        background-color: var(--white);
+        margin: 5% auto;
+        padding: 0;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 600px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .modal-header h3 {
+        color: var(--primary-dark);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .close-modal {
+        color: #aaa;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: color 0.3s ease;
+    }
+
+    .close-modal:hover {
+        color: black;
+    }
+
+    .modal-form {
+        padding: 1.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 0.9rem;
+    }
+
+    .form-group textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+        margin-top: 1.5rem;
+    }
+
+    .modal-actions .btn {
+        flex: 0 0 auto;
+    }
+
+    /* Enhanced Pending Requests Section */
+    .pending-requests-section {
+        background: var(--white);
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        margin-bottom: 1.5rem;
+    }
+
+    .pending-requests-section .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .pending-requests-section .section-header h3 {
+        color: var(--primary-dark);
+        font-size: 1.25rem;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .pending-requests-section .table-container {
+        margin-bottom: 0;
+        box-shadow: none;
+        border: 1px solid #e2e8f0;
+    }
+
+    .pending-requests-section .table-container table {
+        margin: 0;
+    }
+
+    /* Empty State Improvements */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: var(--text-light);
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: #cbd5e0;
+        opacity: 0.7;
+    }
+
+    .empty-state h3 {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+        color: var(--text-dark);
+    }
+
+    .empty-state p {
+        font-size: 0.875rem;
+        opacity: 0.8;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 2rem;
+        color: var(--text-light);
+    }
+
+    /* Make logout button consistent */
+    .logout-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.25rem;
+        border-radius: 10px;
+        border: none;
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: #fff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .logout-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+        background: linear-gradient(135deg, #f87171, #ef4444);
+    }
+
+    .logout-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+
+    /* Subtle zebra striping for generic tables */
+    table tbody tr:nth-child(even) { background: #fcfdff; }
+    table tbody tr:hover { background: #f8fafc; }
+
+    /* Patient row highlight animation */
+    @keyframes highlightPatient {
+        0% { background-color: #fef3c7; transform: scale(1); }
+        50% { background-color: #fde68a; transform: scale(1.02); }
+        100% { background-color: transparent; transform: scale(1); }
+    }
+
+    tr.highlight-patient {
+        animation: highlightPatient 2s ease-in-out;
+        box-shadow: 0 0 0 3px #fbbf24;
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-container {
+            flex-direction: column;
+        }
+
+        .sidebar {
+            width: 100%;
+            height: auto;
+        }
+
+        .header {
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+        }
+
+        .filter-group {
+            flex-direction: column;
+        }
+
+        .filter-item {
+            min-width: 100%;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+            min-width: 120px;
+        }
+        
+        .action-buttons .btn {
+            width: 100%;
+        }
+
+        .stats-container {
+            grid-template-columns: 1fr;
+        }
+
+        .tabs {
+            flex-direction: column;
+        }
+
+        .modal-content {
+            width: 95%;
+            margin: 10% auto;
+        }
+
+        .modal-actions {
+            flex-direction: column;
+        }
+        
+        .modal-actions .btn {
+            width: 100%;
+        }
+
+        .table-container {
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        
+        th,
+        td {
+            padding: 0.625rem 0.75rem;
+            font-size: 0.8rem;
+        }
+        
+        .pending-requests-section {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+        }
+        
+        .pending-requests-section .section-header h3 {
+            font-size: 1.125rem;
+            margin-bottom: 0.75rem;
+        }
+    }
+</style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar" role="navigation" aria-label="Admin navigation">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-cog"></i><span>Admin Panel</span></h2>
+                <button class="toggle-btn" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/admin/dashboard" data-tooltip="Dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+                <li><a href="/admin/analytics" data-tooltip="Analytics"><i class="fas fa-chart-bar"></i><span>Analytics</span></a></li>
+                <li><a href="/admin/residents" data-tooltip="Residents"><i class="fas fa-users"></i><span>Residents</span></a></li>
+                <li><a href="/admin/requests/residents" data-tooltip="Resident Requests"><i class="fas fa-user-clock"></i><span>Resident Requests</span></a></li>
+                <li><a href="/admin/schedule" class="active" data-tooltip="Schedule"><i class="fas fa-calendar-alt"></i><span>Schedule</span></a></li>
+                <li><a href="/admin/announcements" data-tooltip="Announcements"><i class="fas fa-bullhorn"></i><span>Announcements</span></a></li>
+                <li><a href="/admin/inventory" data-tooltip="Inventory"><i class="fas fa-inbox"></i><span>Inventory</span></a></li>
+                <li><a href="/admin/settings" data-tooltip="Settings"><i class="fas fa-cog"></i><span>Settings</span></a></li>
+            </ul>
+        </aside>
+
+
+        <main class="main-content">
+            <header class="header">
+                <h1><i class="fas fa-calendar-alt"></i> Schedule Management</h1>
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <%= username.charAt(0).toUpperCase() %>
+                    </div>
+                    <span>Welcome, <%= username %> (<%= admin.role %>)</span>
+                    <button class="logout-btn" id="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </header>
+
+            <section class="stats-container" id="stats-container">
+                <div class="stat-card total">
+                    <div class="stat-icon total" aria-label="Total Appointments Icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="total-appointments">0</div>
+                        <div class="stat-label">Total Appointments</div>
+                    </div>
+                </div>
+                <div class="stat-card pending">
+                    <div class="stat-icon pending" aria-label="Pending Appointments Icon">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="pending-appointments">0</div>
+                        <div class="stat-label">Pending Approval</div>
+                    </div>
+                </div>
+                <div class="stat-card completed">
+                    <div class="stat-icon completed" aria-label="Completed Appointments Icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="completed-appointments">0</div>
+                        <div class="stat-label">Completed</div>
+                    </div>
+                </div>
+                <div class="stat-card scheduled">
+                    <div class="stat-icon scheduled" aria-label="Scheduled Appointments Icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="scheduled-appointments">0</div>
+                        <div class="stat-label">Scheduled</div>
+                    </div>
+                </div>
+            </section>
+
+            
+            <section class="calendar-container">
+                <div id="calendar"></div>
+            </section>
+
+            
+            <% if (typeof requests !== 'undefined' && requests && requests.length) { %>
+            <section class="pending-requests-section">
+                <h3><i class="fas fa-clock"></i> Pending Schedule Requests</h3>
+                <div class="table-container table-responsive">
+                    <table>
+                        <colgroup>
+                            <col class="col-title">
+                            <col class="col-requester">
+                            <col class="col-requested-date">
+                            <col class="col-requested-type">
+                            <col class="col-expired-date">
+                            <col class="col-actions">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Requester</th>
+                                <th>Requested Date</th>
+                                <th>Requested Type</th>
+                                <th>Expired Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% requests.forEach(function(r) { %>
+                                <tr>
+                                    <td><strong>Schedule Request</strong></td>
+                                    <td>
+                                        <%= r.requester ? (r.requester.firstName + ' ' + (r.requester.lastName || '')) : 'Unknown' %>
+                                        <br><small><i class="fas fa-envelope"></i> <%= r.requester ? r.requester.email : '' %></small>
+                                        <% if (r.requester && r.requester.phone) { %>
+                                        <br><small><i class="fas fa-phone"></i> <%= r.requester.phone %></small>
+                                        <% } %>
+                                    </td>
+                                    <td><%= new Date(r.createdAt).toLocaleDateString() %><br><small><%= new Date(r.createdAt).toLocaleTimeString() %></small></td>
+                                    <td><span class="type-badge"><%= r.appointmentType || 'Not specified' %></span></td>
+                                    <td>
+                                        <% if (r.status === 'expired' && r.expiredAt) { %>
+                                            <span class="status-badge status-expired">
+                                                <i class="fas fa-clock"></i> 
+                                                <%= new Date(r.expiredAt).toLocaleDateString() %>
+                                            </span>
+                                            <br><small><%= new Date(r.expiredAt).toLocaleTimeString() %></small>
+                                        <% } else if (r.status === 'pending') { %>
+                                            <% 
+                                                // Calculate expiry date (assuming 3-day default, can be configured)
+                                                const expiryDays = 3; // This should match the admin settings
+                                                const createdDate = new Date(r.createdAt);
+                                                const expiryDate = new Date(createdDate.getTime() + (expiryDays * 24 * 60 * 60 * 1000));
+                                                const now = new Date();
+                                                const isNearExpiry = expiryDate.getTime() - now.getTime() < (24 * 60 * 60 * 1000); // Less than 1 day left
+                                            %>
+                                            <span class="status-badge <%= isNearExpiry ? 'expiry-warning' : 'expiry-normal' %>">
+                                                <i class="fas fa-hourglass-half"></i> 
+                                                <%= expiryDate.toLocaleDateString() %>
+                                            </span>
+                                            <br><small>
+                                                <i class="fas fa-clock"></i> 
+                                                <%= isNearExpiry ? 'Expires soon!' : 'Will expire' %>
+                                            </small>
+                                        <% } else { %>
+                                            <span style="color: #a0aec0; font-style: italic; font-size: 0.875rem;">
+                                                <i class="fas fa-minus"></i> N/A
+                                            </span>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <% if (r.status === 'pending') { %>
+                                                <button class="btn btn-success btn-sm approve-btn" 
+                                                        data-req-id="<%= r._id %>" 
+                                                        data-start="<%= r.start || '' %>" 
+                                                        data-type="<%= r.appointmentType || '' %>">
+                                                    <i class="fas fa-check"></i> Approve
+                                                </button>
+                                                <button class="btn btn-warning btn-sm decline-btn" 
+                                                        data-req-id="<%= r._id %>">
+                                                    <i class="fas fa-redo"></i> Reschedule
+                                                </button>
+                                            <% } else if (r.status === 'reschedule_requested') { %>
+                                                <% if (r.newStart) { %>
+                                                    <button class="btn btn-success btn-sm approve-reschedule-btn" 
+                                                            data-req-id="<%= r._id %>" 
+                                                            data-new-start="<%= r.newStart %>" 
+                                                            data-new-end="<%= r.newEnd || '' %>"
+                                                            data-type="<%= r.appointmentType || '' %>">
+                                                        <i class="fas fa-check"></i> Approve New Time
+                                                    </button>
+                                                    <button class="btn btn-danger btn-sm reject-reschedule-btn" 
+                                                            data-req-id="<%= r._id %>">
+                                                        <i class="fas fa-times"></i> Reject
+                                                    </button>
+                                                <% } else { %>
+                                                    <span class="btn btn-secondary btn-sm" disabled>
+                                                        <i class="fas fa-clock"></i> Waiting for Response
+                                                    </span>
+                                                <% } %>
+                                            <% } %>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            <% } else { %>
+            <section class="pending-requests-section">
+                <h3><i class="fas fa-clock"></i> Pending Schedule Requests</h3>
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <p>No pending schedule requests</p>
+                </div>
+            </section>
+            <% } %>
+
+            <!-- Patient Information Section -->
+            <section class="pending-requests-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-users"></i> Patient Information</h3>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <input type="text" id="patient-search" placeholder="Search patients..." style="padding: 0.5rem; border-radius: 6px; border: 1px solid #e2e8f0; min-width: 250px;">
+                        <button class="btn btn-sm btn-primary" id="refresh-patients-btn">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                <div class="table-container table-responsive">
+                    <table id="patients-table">
+                        <colgroup>
+                            <col style="width: 20%;">
+                            <col style="width: 18%;">
+                            <col style="width: 12%;">
+                            <col style="width: 10%;">
+                            <col style="width: 18%;">
+                            <col style="width: 12%;">
+                            <col style="width: 10%;">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>Patient Name</th>
+                                <th>Contact</th>
+                                <th>Purok</th>
+                                <th>Total Appts</th>
+                                <th>Appointments</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="patients-tbody">
+                            <tr>
+                                <td colspan="7" class="loading">
+                                    <i class="fas fa-spinner fa-spin"></i> Loading patients...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="approveRequestModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-check-circle"></i> Approve Schedule Request</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <form id="approveRequestForm" class="modal-form">
+                <input type="hidden" id="approveRequestId" name="requestId">
+                <div class="form-group">
+                    <label for="approveReqDate"><i class="fas fa-calendar"></i> Appointment Date *</label>
+                    <input type="date" id="approveReqDate" name="date" required min="<%= new Date().toISOString().split('T')[0] %>">
+                </div>
+                <div class="form-group">
+                    <label for="approveReqTime"><i class="fas fa-clock"></i> Appointment Time *</label>
+                    <input type="time" id="approveReqTime" name="time" required>
+                </div>
+                <div class="form-group">
+                    <label for="approveReqDoctor"><i class="fas fa-user-md"></i> Assign Doctor (optional)</label>
+                    <select id="approveReqDoctor" name="doctorId">
+                        <option value="">-- Unassigned --</option>
+                        <% if (doctors && doctors.length) { %>
+                            <% doctors.forEach(function(d){ %>
+                                <option value="<%= d._id %>">
+                                    Dr. <%= d.firstName %> <%= d.lastName %> (<%= d.email %>)
+                                </option>
+                            <% }) %>
+                        <% } %>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="approveReqNotes"><i class="fas fa-sticky-note"></i> Additional Notes (Optional)</label>
+                    <textarea id="approveReqNotes" name="notes" placeholder="Add any additional notes..." rows="3"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary cancel-btn">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check"></i> Approve & Schedule
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="declineRequestModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-times-circle"></i> Reschedule Request</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <form id="declineRequestForm" class="modal-form">
+                <input type="hidden" id="declineRequestId" name="requestId">
+                <div class="form-group">
+                    <label for="declineReason"><i class="fas fa-exclamation-triangle"></i> Reason for Rescheduling *</label>
+                    <select id="declineReason" name="reason" required>
+                        <option value="">Select a reason...</option>
+                        <option value="schedule_conflict">Schedule Conflict</option>
+                        <option value="unavailable">Temporarily Unavailable</option>
+                        <option value="requires_adjustment">Requires Time Adjustment</option>
+                        <option value="doctor_unavailable">Doctor Unavailable</option>
+                        <option value="facility_issue">Facility Issue</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group" id="otherReasonGroup" style="display:none;">
+                    <label for="customReason"><i class="fas fa-comment"></i> Please specify</label>
+                    <input type="text" id="customReason" name="customReason" placeholder="Enter reason...">
+                </div>
+                <div class="form-group">
+                    <label for="declineNotes"><i class="fas fa-sticky-note"></i> Additional Comments & Suggestions</label>
+                    <textarea id="declineNotes" name="notes" placeholder="Please provide any additional details, suggest alternative times, or explain what would work better for rescheduling..." rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-info-circle"></i> What happens next?</label>
+                    <div style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 6px; padding: 1rem; font-size: 0.9rem; color: #0c4a6e;">
+                        <p style="margin: 0 0 0.5rem 0;"><strong>Reschedule Process:</strong></p>
+                        <ul style="margin: 0; padding-left: 1.2rem;">
+                            <li>The resident will receive a notification about the reschedule request</li>
+                            <li>They can provide new preferred dates through their dashboard</li>
+                            <li>You'll review their new request and approve/decline accordingly</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary cancel-btn">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-redo"></i> Submit Reschedule Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="detailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-info-circle"></i> Appointment Details</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div id="appointmentDetails" class="modal-form">
+            </div>
+        </div>
+    </div>
+
+    <!-- Approve existing appointment (confirmation) -->
+    <div id="approveAppointmentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-check-circle"></i> Approve Appointment</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <form id="approveAppointmentForm" class="modal-form">
+                <input type="hidden" id="approveAppointmentId" name="appointmentId">
+                <div class="form-group">
+                    <p style="margin:0; color: var(--text-dark);">
+                        This will mark the appointment as <strong>scheduled</strong>.
+                    </p>
+                    <small style="color: var(--text-light); display:block; margin-top: 0.5rem;">
+                        You can view full details from the calendar or patient history.
+                    </small>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary cancel-btn">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check"></i> Approve
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    
+
+    <script src="/js/admin.js"></script>
+    <script id="server-data" type="application/json"><%- JSON.stringify({ appointments: appointments || [], requests: requests || [], doctors: doctors || [], appointmentTypes: appointmentTypes || [] }) %></script>
+    <script>
+        // Parse server data from JSON script element
+        const serverDataEl = document.getElementById('server-data');
+        const serverData = serverDataEl ? JSON.parse(serverDataEl.textContent || '{}') : { appointments: [], requests: [], doctors: [], appointmentTypes: [] };
+
+        function initializeApp() {
+            let allAppointments = serverData.appointments || [];
+            const pendingRequests = serverData.requests || [];
+            const adminDoctors = serverData.doctors || [];
+
+            // Make action buttons icon-only and add hover tooltips
+            function enhanceActionButtons(scope) {
+                try {
+                    const root = scope || document;
+                    const mappings = [
+                        { selector: '.approve-appointment-btn, .approve-btn', label: 'Approve' },
+                        { selector: '.decline-btn', label: 'Reschedule' },
+                        { selector: '.approve-reschedule-btn', label: 'Approve New Time' },
+                        { selector: '.reject-reschedule-btn', label: 'Reject' },
+                        { selector: '.complete-appointment-btn', label: 'Complete' },
+                        { selector: '.view-details-btn', label: 'Details' }
+                    ];
+                    mappings.forEach(({ selector, label }) => {
+                        root.querySelectorAll(selector).forEach(btn => {
+                            if (!btn.getAttribute('data-label')) btn.setAttribute('data-label', label);
+                            if (!btn.getAttribute('title')) btn.setAttribute('title', label);
+                            if (!btn.getAttribute('aria-label')) btn.setAttribute('aria-label', label);
+                        });
+                    });
+                } catch (e) {
+                    console.warn('enhanceActionButtons failed:', e);
+                }
+            }
+
+            function initApp() {
+                try {
+                    console.log('Initializing app...');
+                    calculateAndDisplayStatistics();
+                    initializeCalendar();
+                    // Ensure any existing action buttons (including pending requests) have labels
+                    enhanceActionButtons();
+                    setupEventListeners();
+                    loadStatistics();
+                    initModals();
+                    loadPatients(); // Load patient information
+                } catch (error) {
+                    console.error('Error initializing app:', error);
+                }
+            }
+
+            function initModals() {
+                try {
+                    document.querySelectorAll('.close-modal, .cancel-btn').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            console.log('Close/Cancel button clicked');
+                            closeAllModals();
+                        });
+                    });
+
+                    document.querySelectorAll('.modal').forEach(modal => {
+                        modal.addEventListener('click', (e) => {
+                            if (e.target === modal) {
+                                console.log('Modal background clicked');
+                                closeAllModals();
+                            }
+                        });
+                    });
+
+                    const approveForm = document.getElementById('approveRequestForm');
+                    if (approveForm) {
+                        approveForm.addEventListener('submit', (e) => {
+                            console.log('Approve form submitted');
+                            handleApproveSubmit(e);
+                        });
+                    } else {
+                        console.warn('Approve form not found');
+                    }
+
+                    const declineForm = document.getElementById('declineRequestForm');
+                    if (declineForm) {
+                        declineForm.addEventListener('submit', (e) => {
+                            console.log('Decline form submitted');
+                            handleDeclineSubmit(e);
+                        });
+                    } else {
+                        console.warn('Decline form not found');
+                    }
+
+                    // Approve existing appointment modal form
+                    const approveAppointmentForm = document.getElementById('approveAppointmentForm');
+                    if (approveAppointmentForm) {
+                        approveAppointmentForm.addEventListener('submit', (e) => {
+                            console.log('Approve appointment (modal) form submitted');
+                            handleApproveAppointmentSubmit(e);
+                        });
+                    }
+
+                    const declineReason = document.getElementById('declineReason');
+                    if (declineReason) {
+                        declineReason.addEventListener('change', function() {
+                            console.log('Decline reason changed:', this.value);
+                            const otherGroup = document.getElementById('otherReasonGroup');
+                            if (otherGroup) {
+                                otherGroup.style.display = this.value === 'other' ? 'block' : 'none';
+                            }
+                        });
+                    }
+
+                    // Reschedule appointment flow removed per request
+                } catch (error) {
+                    console.error('Error initializing modals:', error);
+                }
+            }
+
+            function closeAllModals() {
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.style.display = 'none';
+                });
+            }
+
+            function calculateAndDisplayStatistics() {
+                try {
+                    const total = allAppointments.length;
+                    const pending = allAppointments.filter(apt => apt.status === 'pending').length;
+                    const completed = allAppointments.filter(apt => apt.status === 'completed').length;
+                    const scheduled = allAppointments.filter(apt => apt.status === 'scheduled').length;
+                    const pendingRequestsCount = pendingRequests.length;
+                    
+                    document.getElementById('total-appointments').textContent = total;
+                    document.getElementById('pending-appointments').textContent = pending + pendingRequestsCount;
+                    document.getElementById('completed-appointments').textContent = completed;
+                    document.getElementById('scheduled-appointments').textContent = scheduled;
+                } catch (error) {
+                    console.error('Error in calculateAndDisplayStatistics:', error);
+                }
+            }
+
+            async function loadStatistics() {
+                try {
+                    const response = await fetch('/admin/schedule/statistics');
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        const stats = data.statistics;
+                        document.getElementById('total-appointments').textContent = stats.total || 0;
+                        document.getElementById('pending-appointments').textContent = stats.pending || 0;
+                        document.getElementById('completed-appointments').textContent = stats.completed || 0;
+                        document.getElementById('scheduled-appointments').textContent = stats.scheduled || 0;
+                    } else {
+                        console.warn('Statistics fetch failed, using local data');
+                        calculateAndDisplayStatistics();
+                    }
+                } catch (error) {
+                    console.error('Error loading statistics:', error);
+                    calculateAndDisplayStatistics();
+                }
+            }
+
+            async function refreshAppointments() {
+                try {
+                    console.log('Refreshing appointments...');
+                    const response = await fetch('/admin/schedule/appointments');
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                    const data = await response.json();
+                    if (data.success) {
+                        allAppointments = data.appointments;
+                        refreshCalendar();
+                        loadStatistics(); // Also refresh stats
+                    } else {
+                        console.warn('Failed to refresh appointments');
+                    }
+                } catch (error) {
+                    console.error('Error refreshing appointments:', error);
+                }
+            }
+
+            // renderAppointments function removed - now using calendar view
+
+            let calendar = null;
+
+            function initializeCalendar() {
+                try {
+                    const calendarEl = document.getElementById('calendar');
+                    if (!calendarEl) {
+                        console.error('Calendar element not found');
+                        return;
+                    }
+
+                    calendar = new FullCalendar.Calendar(calendarEl, {
+                        initialView: 'dayGridMonth',
+                        headerToolbar: {
+                            left: 'prev,next today',
+                            center: 'title',
+                            right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+                        },
+                        height: 'auto',
+                        events: allAppointments.map(apt => {
+                            const patientName = apt.patientId?.firstName && apt.patientId?.lastName 
+                                ? `${apt.patientId.firstName} ${apt.patientId.lastName}` 
+                                : apt.patientName || 'Patient';
+                            
+                            return {
+                                id: apt._id,
+                                title: `${patientName} - ${apt.appointmentType || 'Appointment'}`,
+                                start: `${apt.appointmentDate}T${apt.appointmentTime}`,
+                                extendedProps: {
+                                    status: apt.status,
+                                    type: apt.appointmentType,
+                                    patientId: apt.patientId,
+                                    notes: apt.notes
+                                },
+                                backgroundColor: getStatusColor(apt.status),
+                                borderColor: getStatusColor(apt.status)
+                            };
+                        }),
+                        eventClick: function(info) {
+                            console.log('Calendar event clicked:', info.event.id);
+                            viewDetails(info.event.id);
+                        },
+                        eventDidMount: function(info) {
+                            // Add tooltip showing status
+                            info.el.title = `${info.event.title}\nStatus: ${info.event.extendedProps.status}`;
+                        }
+                    });
+                    
+                    calendar.render();
+                    console.log('Calendar initialized successfully');
+                } catch (error) {
+                    console.error('Error in initializeCalendar:', error);
+                }
+            }
+
+            function refreshCalendar() {
+                if (calendar) {
+                    try {
+                        // Remove all events
+                        calendar.removeAllEvents();
+                        
+                        // Add updated events
+                        const events = allAppointments.map(apt => {
+                            const patientName = apt.patientId?.firstName && apt.patientId?.lastName 
+                                ? `${apt.patientId.firstName} ${apt.patientId.lastName}` 
+                                : apt.patientName || 'Patient';
+                            
+                            return {
+                                id: apt._id,
+                                title: `${patientName} - ${apt.appointmentType || 'Appointment'}`,
+                                start: `${apt.appointmentDate}T${apt.appointmentTime}`,
+                                extendedProps: {
+                                    status: apt.status,
+                                    type: apt.appointmentType,
+                                    patientId: apt.patientId,
+                                    notes: apt.notes
+                                },
+                                backgroundColor: getStatusColor(apt.status),
+                                borderColor: getStatusColor(apt.status)
+                            };
+                        });
+                        
+                        calendar.addEventSource(events);
+                    } catch (error) {
+                        console.error('Error refreshing calendar:', error);
+                    }
+                }
+            }
+
+            function getStatusColor(status) {
+                const colors = {
+                    pending: '#ed8936',
+                    scheduled: '#4299e1',
+                    completed: '#48bb78',
+                    cancelled: '#f56565',
+                    'no-show': '#a0aec0'
+                };
+                return colors[status] || '#4299e1';
+            }
+
+            function setupEventListeners() {
+                try {
+                    // Tab buttons removed - now using calendar only
+
+                    // Logout button
+                    const logoutBtn = document.getElementById('logout-btn');
+                    if (logoutBtn) {
+                        logoutBtn.addEventListener('click', () => {
+                            console.log('Logout button clicked');
+                            logout();
+                        });
+                    } else {
+                        console.warn('Logout button not found');
+                    }
+
+                    // Event delegation for dynamically generated buttons
+                    document.addEventListener('click', function(e) {
+                        const approveBtn = e.target.closest('.approve-btn');
+                        if (approveBtn) {
+                            const reqId = approveBtn.dataset.reqId;
+                            const start = approveBtn.dataset.start;
+                            console.log('Approve button clicked, reqId:', reqId, 'start:', start);
+                            if (reqId) {
+                                openApproveModal(reqId, start);
+                            } else {
+                                console.error('Approve button missing data-req-id');
+                                alert('Error: Request ID is missing');
+                            }
+                            return;
+                        }
+
+                        const declineBtn = e.target.closest('.decline-btn');
+                        if (declineBtn) {
+                            const reqId = declineBtn.dataset.reqId;
+                            console.log('Decline button clicked, reqId:', reqId);
+                            if (reqId) {
+                                openDeclineModal(reqId);
+                            } else {
+                                console.error('Decline button missing data-req-id');
+                                alert('Error: Request ID is missing');
+                            }
+                            return;
+                        }
+
+                        const viewDetailsBtn = e.target.closest('.view-details-btn');
+                        if (viewDetailsBtn && viewDetailsBtn.dataset.appointmentId) {
+                            console.log('View Details button clicked, appointmentId:', viewDetailsBtn.dataset.appointmentId);
+                            viewDetails(viewDetailsBtn.dataset.appointmentId);
+                            return;
+                        }
+
+                        const approveAppointmentBtn = e.target.closest('.approve-appointment-btn');
+                        if (approveAppointmentBtn && approveAppointmentBtn.dataset.appointmentId) {
+                            console.log('Approve Appointment button clicked, appointmentId:', approveAppointmentBtn.dataset.appointmentId);
+                            openApproveAppointmentModal(approveAppointmentBtn.dataset.appointmentId);
+                            return;
+                        }
+
+                        
+
+                        const completeAppointmentBtn = e.target.closest('.complete-appointment-btn');
+                        if (completeAppointmentBtn && completeAppointmentBtn.dataset.appointmentId) {
+                            console.log('Complete Appointment button clicked, appointmentId:', completeAppointmentBtn.dataset.appointmentId);
+                            updateStatus(completeAppointmentBtn.dataset.appointmentId, 'completed');
+                            return;
+                        }
+
+                        const approveRescheduleBtn = e.target.closest('.approve-reschedule-btn');
+                        if (approveRescheduleBtn && approveRescheduleBtn.dataset.reqId) {
+                            console.log('Approve Reschedule button clicked, reqId:', approveRescheduleBtn.dataset.reqId);
+                            const newStart = approveRescheduleBtn.dataset.newStart;
+                            const newEnd = approveRescheduleBtn.dataset.newEnd;
+                            const type = approveRescheduleBtn.dataset.type;
+                            openApproveRescheduleModal(approveRescheduleBtn.dataset.reqId, newStart, newEnd, type);
+                            return;
+                        }
+
+                        const rejectRescheduleBtn = e.target.closest('.reject-reschedule-btn');
+                        if (rejectRescheduleBtn && rejectRescheduleBtn.dataset.reqId) {
+                            console.log('Reject Reschedule button clicked, reqId:', rejectRescheduleBtn.dataset.reqId);
+                            if (confirm('Are you sure you want to reject this reschedule request?')) {
+                                rejectRescheduleRequest(rejectRescheduleBtn.dataset.reqId);
+                            }
+                            return;
+                        }
+
+                        // Patient history button
+                        const viewPatientHistoryBtn = e.target.closest('.view-patient-history-btn');
+                        if (viewPatientHistoryBtn && viewPatientHistoryBtn.dataset.patientId) {
+                            console.log('View Patient History button clicked, patientId:', viewPatientHistoryBtn.dataset.patientId);
+                            viewPatientHistory(viewPatientHistoryBtn.dataset.patientId);
+                            return;
+                        }
+                    });
+
+                    // Patient search functionality
+                    const patientSearch = document.getElementById('patient-search');
+                    if (patientSearch) {
+                        patientSearch.addEventListener('input', (e) => {
+                            filterPatients(e.target.value);
+                        });
+                    }
+
+                    // Refresh patients button
+                    const refreshPatientsBtn = document.getElementById('refresh-patients-btn');
+                    if (refreshPatientsBtn) {
+                        refreshPatientsBtn.addEventListener('click', () => {
+                            console.log('Refresh patients button clicked');
+                            loadPatients();
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error in setupEventListeners:', error);
+                }
+            }
+
+            // Filter functions removed - calendar has built-in filtering
+
+            function logout() {
+                try {
+                    if (!confirm('Are you sure you want to logout?')) return;
+                    fetch('/admin/logout', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    })
+                    .then(r => r.json())
+                    .then(() => { window.location.href = '/'; })
+                    .catch(() => { window.location.href = '/'; });
+                } catch (error) {
+                    console.error('Error in logout:', error);
+                }
+            }
+
+            function openApproveModal(reqId, start) {
+                try {
+                    console.log('Attempting to open approve modal, reqId:', reqId, 'start:', start);
+                    const approveRequestId = document.getElementById('approveRequestId');
+                    const approveReqDate = document.getElementById('approveReqDate');
+                    const approveReqTime = document.getElementById('approveReqTime');
+                    const modal = document.getElementById('approveRequestModal');
+
+                    if (!modal) {
+                        console.error('Approve modal element not found');
+                        alert('Error: Approve modal could not be loaded');
+                        return;
+                    }
+                    if (!approveRequestId) {
+                        console.error('Approve request ID input not found');
+                        alert('Error: Form configuration is incorrect');
+                        return;
+                    }
+                    if (!approveReqDate || !approveReqTime) {
+                        console.error('Approve date or time input not found');
+                        alert('Error: Form configuration is incorrect');
+                        return;
+                    }
+
+                    approveRequestId.value = reqId || '';
+                    if (start && start.includes('T')) {
+                        const [date, time] = start.split('T');
+                        approveReqDate.value = date || '';
+                        approveReqTime.value = time || '';
+                    } else {
+                        console.warn('Invalid or missing start time, resetting date and time fields');
+                        approveReqDate.value = '';
+                        approveReqTime.value = '';
+                    }
+
+                    modal.style.display = 'block';
+                    console.log('Approve modal opened successfully');
+                } catch (error) {
+                    console.error('Error in openApproveModal:', error);
+                    alert('Failed to open approve modal');
+                }
+            }
+
+            function openDeclineModal(reqId) {
+                try {
+                    console.log('Opening decline modal, reqId:', reqId);
+                    const declineRequestId = document.getElementById('declineRequestId');
+                    const modal = document.getElementById('declineRequestModal');
+
+                    if (!modal) {
+                        console.error('Decline modal element not found');
+                        alert('Error: Decline modal could not be loaded');
+                        return;
+                    }
+                    if (!declineRequestId) {
+                        console.error('Decline request ID input not found');
+                        alert('Error: Form configuration is incorrect');
+                        return;
+                    }
+
+                    declineRequestId.value = reqId || '';
+                    modal.style.display = 'block';
+                    console.log('Decline modal opened successfully');
+                } catch (error) {
+                    console.error('Error in openDeclineModal:', error);
+                    alert('Failed to open decline modal');
+                }
+            }
+
+            function openApproveAppointmentModal(appointmentId) {
+                try {
+                    console.log('Opening approve appointment modal, appointmentId:', appointmentId);
+                    const idInput = document.getElementById('approveAppointmentId');
+                    const modal = document.getElementById('approveAppointmentModal');
+                    if (!idInput || !modal) {
+                        console.error('Approve appointment modal elements not found');
+                        alert('Error: Modal configuration is incorrect');
+                        return;
+                    }
+                    idInput.value = appointmentId || '';
+                    modal.style.display = 'block';
+                } catch (error) {
+                    console.error('Error in openApproveAppointmentModal:', error);
+                    alert('Failed to open approve modal');
+                }
+            }
+
+            async function handleApproveSubmit(e) {
+                e.preventDefault();
+                try {
+                    console.log('Handling approve submit...');
+                    const form = e.target;
+                    const formData = new FormData(form);
+                    const requestId = formData.get('requestId');
+                    const date = formData.get('date');
+                    const time = formData.get('time');
+                    const doctorId = formData.get('doctorId');
+                    const notes = formData.get('notes');
+
+                    console.log('Approve request data:', { requestId, date, time, doctorId, notes });
+
+                    // Determine if this is a reschedule approval or regular approval
+                    const isReschedule = document.querySelector('.modal-header h3').textContent.includes('Reschedule');
+                    const endpoint = isReschedule ? 
+                        `/admin/requests/schedule/${requestId}/approve-reschedule` : 
+                        `/admin/requests/schedule/${requestId}/approve`;
+                    
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ date, time, doctorId, notes })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        alert('Request approved successfully!');
+                        closeAllModals();
+                        refreshAppointments(); // Refresh appointments after approval
+                        
+                        // Scroll to patient in patient information table
+                        if (data.appointment && data.appointment.patientId) {
+                            const patientId = typeof data.appointment.patientId === 'object' 
+                                ? data.appointment.patientId._id 
+                                : data.appointment.patientId;
+                            
+                            // Wait a bit for the page to update, then scroll
+                            setTimeout(() => {
+                                scrollToPatient(patientId);
+                            }, 500);
+                        }
+                        
+                        // Remove the request row from pending requests
+                        const row = document.querySelector(`button[data-req-id="${requestId}"]`).closest('tr');
+                        if (row) {
+                            row.remove();
+                            // Update pending count
+                            const pendingEl = document.getElementById('pending-appointments');
+                            if (pendingEl) {
+                                const currentCount = parseInt(pendingEl.textContent) || 0;
+                                pendingEl.textContent = Math.max(0, currentCount - 1);
+                            }
+                        }
+                    } else {
+                        console.error('Approve request failed:', data.error);
+                        alert('Error: ' + (data.error || 'Unknown error occurred'));
+                    }
+                } catch (error) {
+                    console.error('Error in handleApproveSubmit:', error);
+                    alert('Failed to approve request');
+                }
+            }
+
+            async function handleApproveAppointmentSubmit(e) {
+                e.preventDefault();
+                try {
+                    const form = e.target;
+                    const formData = new FormData(form);
+                    const appointmentId = formData.get('appointmentId');
+                    if (!appointmentId) {
+                        alert('Missing appointment ID');
+                        return;
+                    }
+                    const response = await fetch(`/admin/schedule/appointments/${appointmentId}/approve`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        alert('Appointment approved successfully!');
+                        closeAllModals();
+                        refreshAppointments();
+                        loadPatients();
+                    } else {
+                        console.error('Approve appointment failed:', data.error);
+                        alert('Error: ' + (data.error || 'Unknown error occurred'));
+                    }
+                } catch (error) {
+                    console.error('Error in handleApproveAppointmentSubmit:', error);
+                    alert('Failed to approve appointment');
+                }
+            }
+
+            async function handleDeclineSubmit(e) {
+                e.preventDefault();
+                try {
+                    console.log('Handling decline submit...');
+                    const form = e.target;
+                    const formData = new FormData(form);
+                    const requestId = formData.get('requestId');
+                    const reason = formData.get('reason');
+                    const customReason = formData.get('customReason');
+                    const notes = formData.get('notes');
+
+                    console.log('Decline request data:', { requestId, reason, customReason, notes });
+
+                    const response = await fetch(`/admin/requests/schedule/${requestId}/decline`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ reason, customReason, notes })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        alert('Request declined successfully!');
+                        closeAllModals();
+                        refreshAppointments(); // Refresh appointments after decline
+                        // Remove the request row from pending requests
+                        const row = document.querySelector(`button[data-req-id="${requestId}"]`).closest('tr');
+                        if (row) {
+                            row.remove();
+                            // Update pending count
+                            const pendingEl = document.getElementById('pending-appointments');
+                            if (pendingEl) {
+                                const currentCount = parseInt(pendingEl.textContent) || 0;
+                                pendingEl.textContent = Math.max(0, currentCount - 1);
+                            }
+                        }
+                    } else {
+                        console.error('Decline request failed:', data.error);
+                        alert('Error: ' + (data.error || 'Unknown error occurred'));
+                    }
+                } catch (error) {
+                    console.error('Error in handleDeclineSubmit:', error);
+                    alert('Failed to decline request');
+                }
+            }
+
+            async function viewDetails(appointmentId) {
+                try {
+                    console.log('Viewing details for appointment:', appointmentId);
+                    const response = await fetch(`/admin/schedule/appointments/${appointmentId}`);
+                    const data = await response.json();
+                    if (data.success) {
+                        const apt = data.appointment;
+                        const patientId = apt.patientId?._id;
+
+                        // Fetch all appointments for this patient
+                        let allAppointments = [];
+                        if (patientId) {
+                            try {
+                                const patientResponse = await fetch(`/admin/schedule/patient/${patientId}/appointments`);
+                                const patientData = await patientResponse.json();
+                                if (patientData.success) {
+                                    allAppointments = patientData.appointments;
+                                }
+                            } catch (err) {
+                                console.warn('Failed to fetch patient appointments:', err);
+                            }
+                        }
+
+                        const detailsDiv = document.getElementById('appointmentDetails');
+                        if (detailsDiv) {
+                            let appointmentsList = '';
+                            if (allAppointments.length > 0) {
+                                appointmentsList = `
+                                    <div class="form-group">
+                                        <label>All Appointments (${allAppointments.length})</label>
+                                        <div style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.5rem;">
+                                            ${allAppointments.map(appt => `
+                                                <div style="margin-bottom: 0.5rem; padding: 0.5rem; background: #f7fafc; border-radius: 4px;">
+                                                    <strong>${appt.appointmentDate} ${appt.appointmentTime}</strong> - ${appt.appointmentType}
+                                                    <br><small>Status: <span class="status-badge status-${appt.status}">${appt.status}</span></small>
+                                                    ${appt.doctorId ? `<br><small>Doctor: Dr. ${appt.doctorId.firstName} ${appt.doctorId.lastName}</small>` : ''}
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                `;
+                            }
+
+                            detailsDiv.innerHTML = `
+                                <div class="form-group">
+                                    <label>Patient</label>
+                                    <p>${apt.patientId?.firstName || 'N/A'} ${apt.patientId?.lastName || ''}</p>
+                                </div>
+                                <div class="form-group">
+                                    <label>Email</label>
+                                    <p>${apt.patientId?.email || 'N/A'}</p>
+                                </div>
+                                <div class="form-group">
+                                    <label>Phone</label>
+                                    <p>${apt.patientId?.phone || 'N/A'}</p>
+                                </div>
+                                <div class="form-group">
+                                    <label>Purok</label>
+                                    <p>${apt.patientId?.unitNumber || 'N/A'}</p>
+                                </div>
+                                <div class="form-group">
+                                    <label>Current Appointment</label>
+                                    <p><strong>${apt.appointmentDate} at ${apt.appointmentTime}</strong></p>
+                                    <p>Type: ${apt.appointmentType}</p>
+                                    <p>Status: <span class="status-badge status-${apt.status}">${apt.status}</span></p>
+                                    <p>Doctor: ${apt.doctorId ? `Dr. ${apt.doctorId.firstName} ${apt.doctorId.lastName}` : 'Unassigned'}</p>
+                                    <p>Notes: ${apt.notes || 'No notes'}</p>
+                                </div>
+                                ${appointmentsList}
+                            `;
+                            const modal = document.getElementById('detailsModal');
+                            if (modal) {
+                                modal.style.display = 'block';
+                            } else {
+                                console.error('Details modal not found');
+                            }
+                        } else {
+                            console.error('Appointment details div not found');
+                        }
+                    } else {
+                        console.error('Fetch appointment details failed:', data.error);
+                        alert('Error: ' + (data.error || 'Unknown error occurred'));
+                    }
+                } catch (error) {
+                    console.error('Error in viewDetails:', error);
+                    alert('Failed to load appointment details');
+                }
+            }
+
+            async function approveAppointment(appointmentId) {
+                try {
+                    console.log('Approving appointment:', appointmentId);
+                    if (confirm('Are you sure you want to approve this appointment?')) {
+                        const response = await fetch(`/admin/schedule/appointments/${appointmentId}/approve`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            alert('Appointment approved successfully!');
+                            refreshAppointments(); // Refresh instead of reload
+                        } else {
+                            console.error('Approve appointment failed:', data.error);
+                            alert('Error: ' + (data.error || 'Unknown error occurred'));
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error in approveAppointment:', error);
+                    alert('Failed to approve appointment');
+                }
+            }
+
+            async function updateStatus(appointmentId, status) {
+                try {
+                    console.log('Updating status for appointment:', appointmentId, 'to:', status);
+                    if (confirm(`Are you sure you want to mark this appointment as ${status}?`)) {
+                        const response = await fetch(`/admin/schedule/appointments/${appointmentId}/status`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ status })
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            alert('Status updated successfully!');
+                            refreshAppointments(); // Refresh calendar
+                            loadPatients(); // Refresh patient list to update status
+                        } else {
+                            console.error('Update status failed:', data.error);
+                            alert('Error: ' + (data.error || 'Unknown error occurred'));
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error in updateStatus:', error);
+                    alert('Failed to update status');
+                }
+            }
+
+            // Reschedule approval functions
+            function openApproveRescheduleModal(reqId, newStart, newEnd, type) {
+                try {
+                    console.log('Opening approve reschedule modal, reqId:', reqId, 'newStart:', newStart);
+                    
+                    // Parse the new start date/time
+                    const startDate = new Date(newStart);
+                    const dateStr = startDate.toISOString().split('T')[0];
+                    const timeStr = startDate.toTimeString().split(' ')[0].substring(0, 5);
+                    
+                    // Use the existing approve modal but pre-fill with new dates
+                    const approveRequestId = document.getElementById('approveRequestId');
+                    const approveReqDate = document.getElementById('approveReqDate');
+                    const approveReqTime = document.getElementById('approveReqTime');
+                    const modal = document.getElementById('approveRequestModal');
+
+                    if (!modal || !approveRequestId || !approveReqDate || !approveReqTime) {
+                        console.error('Approve modal elements not found');
+                        alert('Error: Modal configuration is incorrect');
+                        return;
+                    }
+
+                    approveRequestId.value = reqId;
+                    approveReqDate.value = dateStr;
+                    approveReqTime.value = timeStr;
+
+                    // Update modal title to indicate reschedule approval
+                    const modalTitle = modal.querySelector('.modal-header h3');
+                    if (modalTitle) {
+                        modalTitle.innerHTML = '<i class="fas fa-calendar-check"></i> Approve Reschedule Request';
+                    }
+
+                    modal.style.display = 'block';
+                    console.log('Approve reschedule modal opened successfully');
+                } catch (error) {
+                    console.error('Error in openApproveRescheduleModal:', error);
+                    alert('Failed to open approve reschedule modal');
+                }
+            }
+
+            async function rejectRescheduleRequest(reqId) {
+                try {
+                    console.log('Rejecting reschedule request:', reqId);
+                    const reason = prompt('Please provide a reason for rejecting the reschedule request:');
+                    if (!reason) return;
+
+                    const response = await fetch(`/admin/requests/schedule/${reqId}/reject-reschedule`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ reason })
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        alert('Reschedule request rejected successfully!');
+                        refreshAppointments();
+                    } else {
+                        console.error('Reject reschedule request failed:', data.error);
+                        alert('Error: ' + (data.error || 'Unknown error occurred'));
+                    }
+                } catch (error) {
+                    console.error('Error in rejectRescheduleRequest:', error);
+                    alert('Failed to reject reschedule request');
+                }
+            }
+
+            // Reschedule appointment flow removed per request
+
+            // Patient Information Functions
+            let allPatients = [];
+            
+            async function loadPatients() {
+                try {
+                    console.log('Loading patients...');
+                    const response = await fetch('/admin/schedule/patients');
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    
+                    const data = await response.json();
+                    if (data.success) {
+                        allPatients = data.patients || [];
+                        renderPatients(allPatients);
+                    } else {
+                        console.error('Failed to load patients');
+                        showPatientsError('Failed to load patients');
+                    }
+                } catch (error) {
+                    console.error('Error loading patients:', error);
+                    showPatientsError('Error loading patients');
+                }
+            }
+
+            function renderPatients(patients) {
+                try {
+                    const tbody = document.getElementById('patients-tbody');
+                    if (!tbody) {
+                        console.error('Patients table body not found');
+                        return;
+                    }
+                    
+                    tbody.innerHTML = '';
+                    
+                    if (patients.length === 0) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="7" class="empty-state">
+                                    <i class="fas fa-user-slash"></i>
+                                    <p>No patients found</p>
+                                </td>
+                            </tr>
+                        `;
+                        return;
+                    }
+                    
+                    patients.forEach(patient => {
+                        const row = document.createElement('tr');
+                        row.setAttribute('data-patient-id', patient._id); // Add patient ID to row
+                        const fullName = `${patient.firstName || ''} ${patient.lastName || ''}`.trim() || 'Unknown';
+                        const email = patient.email || 'N/A';
+                        const phone = patient.phone || 'N/A';
+                        const purok = patient.unitNumber ? `Purok ${patient.unitNumber}` : 'N/A';
+                        const totalAppts = patient.appointmentCount || 0;
+                        
+                        let lastApptDate = 'Never';
+                        let lastApptStatus = '';
+                        if (patient.lastAppointment) {
+                            const date = new Date(patient.lastAppointment.appointmentDate);
+                            lastApptDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                            lastApptStatus = patient.lastAppointment.status || '';
+                        }
+                        
+                        // Determine status based on last appointment
+                        let statusClass = 'status-scheduled';
+                        let statusText = 'Scheduled';
+                        
+                        if (patient.lastAppointment) {
+                            if (patient.lastAppointment.status === 'completed') {
+                                statusClass = 'status-completed';
+                                statusText = 'Completed';
+                            } else {
+                                statusClass = 'status-scheduled';
+                                statusText = 'Scheduled';
+                            }
+                        } else {
+                            statusClass = 'status-no-show';
+                            statusText = 'No Appointments';
+                        }
+                        
+                        row.innerHTML = `
+                            <td>
+                                <strong>${fullName}</strong><br>
+                                <small style="color: #64748b;">${email}</small>
+                            </td>
+                            <td>
+                                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                    <small><i class="fas fa-phone" style="color: #64748b;"></i> ${phone}</small>
+                                </div>
+                            </td>
+                            <td>${purok}</td>
+                            <td>
+                                <span style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem; background: #f0f9ff; border-radius: 12px; font-weight: 600; color: #0369a1;">
+                                    ${totalAppts}
+                                </span>
+                            </td>
+                            <td>
+                                ${lastApptDate}<br>
+                                ${lastApptStatus ? `<small><span class="status-badge status-${lastApptStatus}">${lastApptStatus}</span></small>` : ''}
+                            </td>
+                            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn btn-sm btn-primary view-patient-history-btn" data-patient-id="${patient._id}" title="View History">
+                                        <i class="fas fa-history"></i>
+                                    </button>
+                                    ${patient.lastAppointment && patient.lastAppointment.status !== 'completed' ? `
+                                    <button class="btn btn-sm btn-success complete-appointment-btn" data-appointment-id="${patient.lastAppointment._id}" title="Complete">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    ` : ''}
+                                </div>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                    
+                    // Enhance action buttons
+                    enhanceActionButtons(tbody);
+                } catch (error) {
+                    console.error('Error rendering patients:', error);
+                }
+            }
+
+            function showPatientsError(message) {
+                const tbody = document.getElementById('patients-tbody');
+                if (tbody) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 2rem; color: #ef4444;">
+                                <i class="fas fa-exclamation-triangle"></i> ${message}
+                            </td>
+                        </tr>
+                    `;
+                }
+            }
+
+            function filterPatients(searchTerm) {
+                if (!searchTerm) {
+                    renderPatients(allPatients);
+                    return;
+                }
+                
+                const filtered = allPatients.filter(patient => {
+                    const fullName = `${patient.firstName || ''} ${patient.lastName || ''}`.toLowerCase();
+                    const email = (patient.email || '').toLowerCase();
+                    const phone = (patient.phone || '').toLowerCase();
+                    const search = searchTerm.toLowerCase();
+                    
+                    return fullName.includes(search) || email.includes(search) || phone.includes(search);
+                });
+                
+                renderPatients(filtered);
+            }
+
+            async function viewPatientHistory(patientId) {
+                try {
+                    console.log('Viewing patient history:', patientId);
+                    const response = await fetch(`/admin/schedule/patients/${patientId}/appointments`);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    
+                    const data = await response.json();
+                    if (data.success) {
+                        const patient = data.patient;
+                        const appointments = data.appointments || [];
+                        
+                        let appointmentsList = '';
+                        if (appointments.length > 0) {
+                            appointmentsList = `
+                                <div style="margin-top: 1.5rem;">
+                                    <h4 style="color: var(--primary-dark); margin-bottom: 1rem;">
+                                        <i class="fas fa-calendar-alt"></i> Appointment History (${appointments.length})
+                                    </h4>
+                                    <div style="max-height: 300px; overflow-y: auto;">
+                                        <table style="width: 100%; font-size: 0.875rem;">
+                                            <thead>
+                                                <tr style="background: var(--light-bg);">
+                                                    <th style="padding: 0.5rem; text-align: left;">Date</th>
+                                                    <th style="padding: 0.5rem; text-align: left;">Type</th>
+                                                    <th style="padding: 0.5rem; text-align: left;">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${appointments.map(apt => `
+                                                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                                                        <td style="padding: 0.5rem;">${new Date(apt.appointmentDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                                                        <td style="padding: 0.5rem;">${apt.appointmentType || 'N/A'}</td>
+                                                        <td style="padding: 0.5rem;"><span class="status-badge status-${apt.status}">${apt.status}</span></td>
+                                                    </tr>
+                                                `).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        
+                        const detailsDiv = document.getElementById('appointmentDetails');
+                        if (detailsDiv) {
+                            detailsDiv.innerHTML = `
+                                <div style="padding: 1.5rem;">
+                                    <h4 style="color: var(--primary-dark); margin-bottom: 1rem;">
+                                        <i class="fas fa-user"></i> Patient Information
+                                    </h4>
+                                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem;">
+                                        <div>
+                                            <strong style="color: var(--text-light);">Full Name:</strong><br>
+                                            <span style="color: var(--text-dark);">${patient.firstName || ''} ${patient.lastName || ''}</span>
+                                        </div>
+                                        <div>
+                                            <strong style="color: var(--text-light);">Email:</strong><br>
+                                            <span style="color: var(--text-dark);">${patient.email || 'N/A'}</span>
+                                        </div>
+                                        <div>
+                                            <strong style="color: var(--text-light);">Phone:</strong><br>
+                                            <span style="color: var(--text-dark);">${patient.phone || 'N/A'}</span>
+                                        </div>
+                                        <div>
+                                            <strong style="color: var(--text-light);">Purok:</strong><br>
+                                            <span style="color: var(--text-dark);">${patient.unitNumber ? `Purok ${patient.unitNumber}` : 'N/A'}</span>
+                                        </div>
+                                        <div>
+                                            <strong style="color: var(--text-light);">Total Appointments:</strong><br>
+                                            <span style="color: var(--text-dark);">${appointments.length}</span>
+                                        </div>
+                                        <div>
+                                            <strong style="color: var(--text-light);">Status:</strong><br>
+                                            <span class="status-badge ${patient.isActive ? 'status-completed' : 'status-no-show'}">${patient.isActive ? 'Active' : 'Inactive'}</span>
+                                        </div>
+                                    </div>
+                                    ${appointmentsList}
+                                </div>
+                            `;
+                            
+                            const modal = document.getElementById('detailsModal');
+                            if (modal) {
+                                modal.style.display = 'block';
+                            }
+                        }
+                    } else {
+                        console.error('Failed to load patient history');
+                        alert('Failed to load patient history');
+                    }
+                } catch (error) {
+                    console.error('Error viewing patient history:', error);
+                    alert('Failed to load patient history');
+                }
+            }
+
+            // Function to scroll to and highlight a patient in the patient table
+            function scrollToPatient(patientId) {
+                try {
+                    console.log('Scrolling to patient:', patientId);
+                    
+                    // Find the patient table section
+                    const patientsSection = document.querySelector('.pending-requests-section:has(#patients-table)');
+                    if (!patientsSection) {
+                        console.error('Patients section not found');
+                        return;
+                    }
+
+                    // Find the patient row
+                    const patientRow = document.querySelector(`tr[data-patient-id="${patientId}"]`);
+                    if (!patientRow) {
+                        console.warn('Patient row not found, reloading patients...');
+                        // Reload patients and try again after a short delay
+                        loadPatients().then(() => {
+                            setTimeout(() => {
+                                const row = document.querySelector(`tr[data-patient-id="${patientId}"]`);
+                                if (row) {
+                                    scrollToAndHighlightRow(row, patientsSection);
+                                }
+                            }, 500);
+                        });
+                        return;
+                    }
+
+                    scrollToAndHighlightRow(patientRow, patientsSection);
+                } catch (error) {
+                    console.error('Error scrolling to patient:', error);
+                }
+            }
+
+            function scrollToAndHighlightRow(row, section) {
+                // Scroll to the section first
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                // Wait for scroll to complete, then highlight the row
+                setTimeout(() => {
+                    // Remove highlight from any previously highlighted rows
+                    document.querySelectorAll('tr.highlight-patient').forEach(r => {
+                        r.classList.remove('highlight-patient');
+                    });
+
+                    // Add highlight to the target row
+                    row.classList.add('highlight-patient');
+                    
+                    // Scroll the row into view within its container
+                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                    // Remove highlight after animation completes
+                    setTimeout(() => {
+                        row.classList.remove('highlight-patient');
+                    }, 2500);
+                }, 300);
+            }
+
+            // Initialize the app
+            initApp();
+        }
+
+        // Start the app
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM fully loaded, initializing app...');
+            initializeApp();
+        });
+
+        window.addEventListener('error', function(e) {
+            console.error('Global error caught:', e.error);
+        });
+    </script>
+</body>
+</html>

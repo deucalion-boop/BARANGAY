@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Announcements</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/user.css">
+  <style>
+        .card { background: var(--white); padding: 1.25rem; border-radius: 12px; box-shadow: var(--shadow); margin-bottom:1rem; max-width: 100%; }
+        /* Improved announcement card */
+        .announcement{
+            position: relative;
+            padding:1rem;
+            margin-bottom:1rem;
+            border-radius:12px;
+            background:#fff;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+        }
+        .announcement::before{
+            content:"";
+            position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:12px 0 0 12px;
+            background: linear-gradient(180deg, var(--accent-color), #2563eb);
+        }
+        .announcement:hover{ transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,0.08); }
+
+        .announcement-header{ display:flex; justify-content:space-between; align-items:center; gap:.75rem; margin-bottom:.5rem; }
+        .announcement-header .title{ display:flex; align-items:center; gap:.5rem; min-width:0; }
+        .announcement-header .title i{ color: var(--accent-color); }
+    .announcement-header h3{ margin:0; font-size:1.7rem; color:#111827; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .announcement-header .badge{ padding:.25rem .5rem; border-radius:999px; background: #eef2ff; color:#374151; font-size:.75rem; font-weight:600; border:1px solid #e5e7eb; }
+        .announcement-header .meta{ color: var(--text-light); font-size:.85rem; display:flex; align-items:center; gap:.4rem; white-space:nowrap; }
+
+    .announcement-content{ margin-top:.75rem; text-align: justify; line-height: 1.6; word-wrap: break-word; hyphens: auto; color:#1f2937; font-size:1.3rem; }
+        .btn{padding:.5rem .75rem;border-radius:6px;background:var(--accent-color);color:#fff;text-decoration:none}
+
+            /* Image styling for announcements - fixed 550x550 square with cover */
+                        .announcement-media{ 
+                            margin-top:.5rem; 
+                            width:550px; 
+                            height:550px; 
+                            max-width:100%;
+                            border-radius:8px; 
+                            overflow:hidden; 
+                            background:#f8fafc; 
+                            border:1px solid #e2e8f0; 
+                            margin-left:auto; 
+                            margin-right:auto;
+                        }
+                        .announcement-media img{ 
+                            width:100%; 
+                            height:100%; 
+                            object-fit:cover; 
+                            display:block; 
+                            cursor: zoom-in;
+                        }
+
+            /* Lightbox modal for viewing full image */
+            .lightbox-modal {
+                display: none;
+                position: fixed;
+                z-index: 3005;
+                left: 0; top: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.85);
+                align-items: center;
+                justify-content: center;
+                padding: 2rem;
+            }
+            .lightbox-modal.open { display: flex; }
+            .lightbox-content { position: relative; max-width: 95vw; max-height: 90vh; }
+            .lightbox-content img { 
+                max-width: 95vw; 
+                max-height: 90vh; 
+                width: auto; height: auto; 
+                object-fit: contain; 
+                border-radius: 8px; 
+                box-shadow: 0 20px 40px rgba(0,0,0,0.35);
+                background: #000;
+                display: block;
+            }
+            .lightbox-close {
+                position: absolute; top: -16px; right: -16px;
+                width: 36px; height: 36px;
+                border-radius: 50%; border: none; cursor: pointer;
+                background: rgba(0,0,0,0.6); color: #fff; font-size: 22px;
+                display: flex; align-items: center; justify-content: center;
+            }
+            .lightbox-caption { color: #e5e7eb; text-align: center; margin-top: .75rem; font-size: .9rem; }
+
+        @media (max-width: 768px) { .dashboard-container { flex-direction: column; } .sidebar { width:100%; } }
+
+      /* Avatar dropdown */
+    .avatar-wrapper { position: relative; display: inline-flex; align-items: center; gap:.5rem; cursor: pointer; }
+      .avatar-wrapper .user-avatar { width:32px; height:32px; font-size:0.9rem; display:flex; align-items:center; justify-content:center; overflow:hidden; border-radius:50%; background: #eef2ff; color:#334155; font-weight:700; }
+      .profile-dropdown { position:absolute; right:0; top: calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:10px; box-shadow: 0 12px 28px rgba(0,0,0,.12); min-width: 180px; display:none; z-index: 3004; overflow:hidden; }
+      .profile-dropdown a { display:flex; align-items:center; gap:.5rem; padding:.6rem .85rem; color:#1f2937; text-decoration:none; font-size:.9rem; }
+      .profile-dropdown a i { width:18px; text-align:center; color:#64748b; }
+    .profile-dropdown a:hover { background:#f8fafc; }
+    .avatar-wrapper.open .profile-dropdown { display:block; }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+        <aside class="sidebar" role="navigation" aria-label="User navigation">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-home"></i><span>Barangay</span></h2>
+                <button class="toggle-btn" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+                <div style="font-size:.9rem; opacity:.9; margin-top:.5rem;">Resident Dashboard</div>
+            </div>
+
+            <ul class="sidebar-menu">
+                <li><a href="/users/dashboard" data-tooltip="Dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+                <li><a href="/users/announcements" class="active" data-tooltip="Announcements"><i class="fas fa-bullhorn"></i><span>Announcements</span></a></li>
+                <li><a href="/users/schedule" data-tooltip="Schedule"><i class="fas fa-calendar-alt"></i><span>Schedule</span></a></li>
+                <li><a id="logout-btn" href="/users/logout" data-tooltip="Logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
+            </ul>
+        </aside>
+        <div class="overlay"></div>
+
+        <main class="main-content">
+            <div class="header">
+                <h1>Welcome, <%= (user.firstName && user.firstName.length) ? user.firstName : (user.name ? user.name.split(' ')[0] : 'User') %>!</h1>
+                <div class="user-info">
+                    <div style="text-align:right;">
+                        <div style="font-weight:700; display:flex; align-items:center; gap:.5rem; justify-content:flex-end;">
+                            <% const _avatarUrl = (user && (user.avatarUrl || user.profileImageUrl || user.imageUrl || user.photoUrl)); %>
+                            <div class="avatar-wrapper">
+                                <div class="user-avatar">
+                                    <% if (_avatarUrl) { %>
+                                        <img src="<%= _avatarUrl %>" alt="Profile" style="width:100%; height:100%; object-fit:cover; border-radius:50%;" />
+                                    <% } else { %>
+                                        <%= (user.name && user.name.length) ? user.name.charAt(0).toUpperCase() : 'U' %>
+                                    <% } %>
+                                </div>
+                                <span><%= user.name %></span>
+                                <div class="profile-dropdown">
+                                    <a href="/users/settings"><i class="fas fa-gear"></i> Settings</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="font-size:.9rem; color:var(--text-light);"><%= user.email %> | Purok <%= user.unitNumber %></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <% if (typeof announcements !== 'undefined' && announcements && announcements.length) { %>
+                    <% announcements.forEach(function(a){ %>
+                        <div class="announcement">
+                            <div class="announcement-header">
+                                <div class="title">
+                                    <i class="fas fa-bullhorn" aria-hidden="true"></i>
+                                    <h3 title="<%= a.title || '' %>"><%= a.title %></h3>
+                                    <span class="badge"><%= a.type || 'Notice' %></span>
+                                </div>
+                                <div class="meta">
+                                    <i class="far fa-clock" aria-hidden="true"></i>
+                                    <span><%= a.createdAt ? new Date(a.createdAt).toLocaleString() : '' %></span>
+                                </div>
+                            </div>
+                            <% if (a.imageUrl) { %>
+                            <div class="announcement-media">
+                                <img src="<%= a.imageUrl %>" alt="<%= a.title ? a.title + ' image' : 'Announcement image' %>">
+                            </div>
+                            <% } %>
+                            <div class="announcement-content"><%= a.content || a.body || '' %></div>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <p class="small">No announcements at this time.</p>
+                <% } %>
+            </div>
+
+            <!-- Request Announcement form removed per UX decision -->
+        </main>
+    </div>
+    <!-- Image Lightbox Modal -->
+    <div id="imageLightbox" class="lightbox-modal" aria-hidden="true" role="dialog" aria-label="Image preview">
+        <div class="lightbox-content">
+            <button type="button" class="lightbox-close" aria-label="Close">&times;</button>
+            <img id="lightboxImg" src="" alt="">
+            <div id="lightboxCaption" class="lightbox-caption"></div>
+        </div>
+    </div>
+    <script src="/js/user.js"></script>
+        <script>
+            // Avatar dropdown: click to toggle, click outside to close
+            document.addEventListener('DOMContentLoaded', function() {
+                document.querySelectorAll('.avatar-wrapper').forEach(function(wrapper){
+                    const dropdown = wrapper.querySelector('.profile-dropdown');
+                    if (!dropdown) return;
+                    wrapper.addEventListener('click', function(e){
+                        e.stopPropagation();
+                        document.querySelectorAll('.avatar-wrapper.open').forEach(w => { if (w !== wrapper) w.classList.remove('open'); });
+                        wrapper.classList.toggle('open');
+                    });
+                    dropdown.addEventListener('click', function(e){ e.stopPropagation(); });
+                });
+                document.addEventListener('click', function(){
+                    document.querySelectorAll('.avatar-wrapper.open').forEach(w => w.classList.remove('open'));
+                });
+
+                // Lightbox: click announcement image to view full image
+                const modal = document.getElementById('imageLightbox');
+                const modalImg = document.getElementById('lightboxImg');
+                const modalCaption = document.getElementById('lightboxCaption');
+                const closeBtn = modal ? modal.querySelector('.lightbox-close') : null;
+
+                function openLightbox(src, caption) {
+                    if (!modal || !modalImg) return;
+                    modalImg.src = src || '';
+                    modalImg.alt = caption || '';
+                    if (modalCaption) modalCaption.textContent = caption || '';
+                    modal.classList.add('open');
+                    modal.setAttribute('aria-hidden', 'false');
+                    document.body.style.overflow = 'hidden';
+                }
+
+                function closeLightbox() {
+                    if (!modal || !modalImg) return;
+                    modal.classList.remove('open');
+                    modal.setAttribute('aria-hidden', 'true');
+                    modalImg.src = '';
+                    document.body.style.overflow = '';
+                }
+
+                document.querySelectorAll('.announcement-media img').forEach(function(img){
+                    img.addEventListener('click', function(){
+                        const src = img.getAttribute('src');
+                        const caption = img.getAttribute('alt') || 'Image';
+                        openLightbox(src, caption);
+                    });
+                });
+
+                if (closeBtn) closeBtn.addEventListener('click', closeLightbox);
+                if (modal) {
+                    modal.addEventListener('click', function(e){
+                        if (e.target === modal) closeLightbox();
+                    });
+                }
+                document.addEventListener('keydown', function(e){
+                    if (e.key === 'Escape' && modal && modal.classList.contains('open')) {
+                        closeLightbox();
+                    }
+                });
+            });
+        </script>
+</body>
+</html>

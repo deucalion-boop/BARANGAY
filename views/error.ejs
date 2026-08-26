@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title || 'Error' %></title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .error-container {
+            background: white;
+            padding: 3rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+        .error-code {
+            font-size: 4rem;
+            color: #e53e3e;
+            margin-bottom: 1rem;
+            font-weight: bold;
+        }
+        .error-title {
+            font-size: 1.5rem;
+            color: #2d3748;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        .error-message {
+            color: #718096;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+            font-size: 1.1rem;
+        }
+        .back-btn {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.3s ease;
+            font-weight: 500;
+        }
+        .back-btn:hover {
+            background: #3182ce;
+        }
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-code">
+            <% if (typeof status !== 'undefined') { %>
+                <%= status %>
+            <% } else { %>
+                500
+            <% } %>
+        </div>
+        <div class="error-title"><%= title || 'Oops! Something went wrong' %></div>
+        <div class="error-message">
+            <%= message || 'An unexpected error has occurred. Please try again later.' %>
+        </div>
+        <div class="button-group">
+            <a href="/" class="back-btn">Go Back Home</a>
+            <a href="javascript:history.back()" class="back-btn" style="background: #718096;">Go Back</a>
+        </div>
+    </div>
+</body>
+</html>

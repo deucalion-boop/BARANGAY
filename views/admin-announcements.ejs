@@ -1,0 +1,1611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Center - Announcements Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <style>
+        :root {
+            --announcement-thumb-size: 150px; /* ~4x4 cm equivalent on typical screens */
+        }
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-icon {
+            width: 56px; /* Slightly smaller for better balance */
+            height: 56px;
+            border-radius: 10px; /* Softer corners */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem; /* Larger icons for prominence */
+            color: var(--white);
+            position: relative;
+            overflow: hidden; /* For gradient and animation effects */
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Subtle shine effect on hover */
+        .stat-icon::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent,
+                rgba(255, 255, 255, 0.2),
+                transparent
+            );
+            transform: rotate(45deg);
+            transition: transform 0.5s ease;
+        }
+
+        .stat-icon:hover::before {
+            transform: rotate(45deg) translate(70%, 70%);
+        }
+
+        /* Specific icon styles */
+        .stat-icon.total {
+            background: linear-gradient(135deg, #667eea, #764ba2); /* Vibrant gradient for total */
+        }
+
+        .stat-icon.active {
+            background: linear-gradient(135deg, #48bb78, #38a169); /* Green for active */
+        }
+
+        .stat-icon.urgent {
+            background: linear-gradient(135deg, #f56565, #c53030); /* Red for urgent */
+        }
+
+        .stat-icon.expired {
+            background: linear-gradient(135deg, #a0aec0, #718096); /* Gray for expired */
+        }
+
+        /* Icon-specific hover effect */
+        .stat-icon:hover {
+            transform: scale(1.1); /* Slight scale-up on hover */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-info h3 {
+            font-size: 0.875rem;
+            color: var(--text-light);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-info .number {
+            font-size: 1.75rem;
+            font-weight: bold;
+            color: var(--primary-dark);
+        }
+        /* Search and Filter Styles */
+        .search-filter-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+        }
+
+        .filter-dropdown {
+            position: relative;
+            min-width: 150px;
+        }
+
+        .filter-dropdown select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: var(--white);
+            font-size: 0.875rem;
+            cursor: pointer;
+            appearance: none;
+        }
+
+        .filter-dropdown input[type="date"] {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: var(--white);
+            font-size: 0.875rem;
+            cursor: pointer;
+            appearance: none;
+            color: var(--text-dark);
+        }
+        
+
+        /* show caret only on select dropdown wrappers */
+        .filter-dropdown.select-dropdown::after {
+            content: '\f078';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+            pointer-events: none;
+        }
+
+        .add-announcement-btn {
+            background: var(--success-color);
+            color: var(--white);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .add-announcement-btn:hover {
+            background: #38a169;
+        }
+
+        /* Announcements List Styles */
+        .announcements-list {
+            display: grid;
+            gap: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .announcement-card {
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .announcement-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .announcement-card.urgent {
+            border-left-color: var(--danger-color);
+        }
+
+        .announcement-card.maintenance {
+            border-left-color: var(--warning-color);
+        }
+
+        .announcement-card.event {
+            border-left-color: var(--success-color);
+        }
+
+        .announcement-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .announcement-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .announcement-meta {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-type {
+            background: #bee3f8;
+            color: #2c5aa0;
+        }
+
+        .badge-priority {
+            background: #c6f6d5;
+            color: #276749;
+        }
+
+        .badge-priority.high {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .badge-priority.medium {
+            background: #feebcb;
+            color: #d69e2e;
+        }
+
+        .badge-priority.low {
+            background: #c6f6d5;
+            color: #276749;
+        }
+
+        .badge-status {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .badge-status.active {
+            background: #c6f6d5;
+            color: #276749;
+        }
+
+        .badge-status.inactive {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .announcement-content {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .announcement-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.875rem;
+            color: var(--text-light);
+        }
+
+        .announcement-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: var(--accent-color);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: #3182ce;
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: var(--white);
+        }
+
+        .btn-danger:hover {
+            background: #e53e3e;
+        }
+
+        .btn-warning {
+            background: var(--warning-color);
+            color: var(--white);
+        }
+
+        .btn-warning:hover {
+            background: #dd6b20;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .action-btn {
+            background: var(--white);
+            border: 2px solid #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: var(--text-dark);
+        }
+
+        .action-btn:hover {
+            border-color: var(--accent-color);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .action-btn i {
+            font-size: 2rem;
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--white);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            color: var(--primary-dark);
+            font-size: 1.25rem;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-light);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .form-check {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-check input {
+            width: auto;
+        }
+
+        /* Loading Spinner */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #3498db;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Image upload & preview */
+        .image-upload {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .image-preview {
+            display: none;
+            position: relative;
+            max-width: 100%;
+        }
+
+        .image-preview img {
+            width: var(--announcement-thumb-size);
+            height: var(--announcement-thumb-size);
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .remove-image-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(229, 62, 62, 0.9);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+
+        .announcement-card-image {
+            margin-bottom: 0.75rem;
+            width: var(--announcement-thumb-size);
+            height: var(--announcement-thumb-size);
+            overflow: hidden;
+            border-radius: 6px;
+        }
+
+        .announcement-card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* Alert Styles */
+        .alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .dashboard-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .search-filter-bar {
+                flex-direction: column;
+            }
+
+            .search-box {
+                min-width: 100%;
+            }
+
+            .announcement-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .announcement-footer {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            .announcement-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 1rem;
+            }
+        }
+
+        /* Archived floating circle button */
+        .archive-fab {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: none;
+            background: var(--accent-color);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            cursor: pointer;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            z-index: 1100;
+        }
+        .archive-fab:hover { filter: brightness(0.95); }
+        .archive-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            border-radius: 999px;
+            background: #e53e3e;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Archived list items */
+        .archived-list { display: grid; gap: 0.75rem; }
+        .archived-item { border:1px solid #e2e8f0; border-radius:10px; padding:0.75rem; background:#fff; display:flex; gap:0.75rem; align-items:flex-start; }
+        .archived-thumb { width: 80px; height: 80px; border-radius:8px; overflow:hidden; background:#f8fafc; border:1px solid #e2e8f0; flex:0 0 auto; display:flex; align-items:center; justify-content:center; }
+        .archived-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+        .archived-body { flex:1 1 auto; min-width:0; }
+        .archived-title { font-weight:600; color:var(--primary-dark); margin:0 0 4px 0; }
+        .archived-meta { font-size:0.8rem; color:var(--text-light); display:flex; gap:0.5rem; flex-wrap:wrap; }
+        .archived-actions { display:flex; gap:0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" role="navigation" aria-label="Admin navigation">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-cog"></i><span>Admin Panel</span></h2>
+                <button class="toggle-btn" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/admin/dashboard" data-tooltip="Dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+                <li><a href="/admin/analytics" data-tooltip="Analytics"><i class="fas fa-chart-bar"></i><span>Analytics</span></a></li>
+                <li><a href="/admin/residents" data-tooltip="Residents"><i class="fas fa-users"></i><span>Residents</span></a></li>
+                <li><a href="/admin/requests/residents" data-tooltip="Resident Requests"><i class="fas fa-user-clock"></i><span>Resident Requests</span></a></li>
+                <li><a href="/admin/schedule" data-tooltip="Schedule"><i class="fas fa-calendar-alt"></i><span>Schedule</span></a></li>
+                <li><a href="/admin/announcements" class="active" data-tooltip="Announcements"><i class="fas fa-bullhorn"></i><span>Announcements</span></a></li>
+                <li><a href="/admin/inventory" data-tooltip="Inventory"><i class="fas fa-inbox"></i><span>Inventory</span></a></li>
+                <li><a href="/admin/settings" data-tooltip="Settings"><i class="fas fa-cog"></i><span>Settings</span></a></li>
+            </ul>
+        </aside>
+
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <h1>Announcements Management</h1>
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <%= username.charAt(0).toUpperCase() %>
+                    </div>
+                    <span>Welcome, <%= username %> (<%= admin.role %>)</span>
+                    <button class="logout-btn" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                </div>
+            </header>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon total">
+                        <i class="fas fa-bullhorn"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Total Announcements</h3>
+                        <div class="number" id="total-announcements">0</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon active">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Active Announcements</h3>
+                        <div class="number" id="active-announcements">0</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon urgent">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Urgent Announcements</h3>
+                        <div class="number" id="urgent-announcements">0</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon expired">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Expired Announcements</h3>
+                        <div class="number" id="expired-announcements">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search and Filter Bar -->
+            <div class="search-filter-bar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="search-announcements" placeholder="Search announcements...">
+                </div>
+                <div class="filter-dropdown select-dropdown">
+                    <select id="type-filter">
+                        <option value="all">All Types</option>
+                        <option value="general">General</option>
+                        <option value="urgent">Urgent</option>
+                        <option value="maintenance">Maintenance</option>
+                        <option value="event">Event</option>
+                    </select>
+                </div>
+                <div class="filter-dropdown select-dropdown">
+                    <select id="status-filter">
+                        <option value="all">All</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="archived">Archived</option>
+                    </select>
+                </div>
+                <div class="filter-dropdown select-dropdown">
+                    <select id="priority-filter">
+                        <option value="all">All Priorities</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+                <div class="filter-dropdown">
+                    <input type="date" id="date-filter" placeholder="Created Date" title="Choose created date">
+                </div>
+                <button class="add-announcement-btn" id="add-announcement-btn">
+                    <i class="fas fa-plus"></i> Add New Announcement
+                </button>
+            </div>
+
+            <!-- Announcements List Section -->
+            <section class="content-section">
+                <div class="section-header">
+                    <h2>All Announcements</h2>
+                    <a href="#" class="view-all" id="refresh-announcements">Refresh</a>
+                </div>
+                <div class="announcements-list" id="announcements-list">
+                    <div style="text-align: center; padding: 2rem;">
+                        <div class="loading"></div> Loading announcements...
+                    </div>
+                </div>
+            </section>
+
+            
+        </main>
+    </div>
+
+    <!-- Modal for Announcement Details -->
+    <div class="modal" id="announcement-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Add New Announcement</h3>
+                <button class="close-modal" id="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="announcement-form">
+                    <div class="form-group">
+                        <label for="announcement-title">Title *</label>
+                        <input type="text" id="announcement-title" placeholder="Enter announcement title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="announcement-content">Content *</label>
+                        <textarea id="announcement-content" placeholder="Enter announcement content" rows="5" required></textarea>
+                    </div>
+                    <div class="form-group image-upload">
+                        <label for="announcement-image">Image (optional)</label>
+                        <input type="file" id="announcement-image" accept="image/*">
+                        <div class="image-preview" id="image-preview-container">
+                            <img id="image-preview" alt="Selected image preview" />
+                            <button type="button" class="remove-image-btn" id="remove-image-btn">Remove</button>
+                        </div>
+                        <div class="form-check" id="remove-image-check-wrapper" style="display:none;">
+                            <input type="checkbox" id="remove-image-checkbox">
+                            <label for="remove-image-checkbox">Remove current image</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="announcement-type">Type</label>
+                        <select id="announcement-type">
+                            <option value="general">General</option>
+                            <option value="urgent">Urgent</option>
+                            <option value="maintenance">Maintenance</option>
+                            <option value="event">Event</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="announcement-priority">Priority</label>
+                        <select id="announcement-priority">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="announcement-expiry">Expiry Date (Optional)</label>
+                        <input type="date" id="announcement-expiry">
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" id="announcement-active" checked>
+                        <label for="announcement-active">Active</label>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-danger" id="delete-btn" style="display: none;">Delete</button>
+                        <button type="submit" class="btn btn-primary" id="save-btn">
+                            <span class="btn-text">Save Announcement</span>
+                            <div class="loading" style="display: none;"></div>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Delete Confirmation -->
+    <div class="modal" id="delete-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirm Delete</h3>
+                <button class="close-modal" id="close-delete-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this announcement? This action cannot be undone.</p>
+                <p><strong id="delete-announcement-title"></strong></p>
+                <div class="form-actions">
+                    <button class="btn" id="cancel-delete">Cancel</button>
+                    <button class="btn btn-danger" id="confirm-delete">
+                        <span class="btn-text">Delete Announcement</span>
+                        <div class="loading" style="display: none;"></div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/js/admin.js"></script>
+    <script>
+        // Global variables
+        let currentAnnouncementId = null;
+        let announcements = [];
+    let currentImageUrl = null;
+
+        // Utility functions
+        function formatDate(dateString) {
+            if (!dateString) return 'Not set';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+            });
+        }
+
+        // Compute tomorrow in local time as YYYY-MM-DD
+        function getTomorrowYYYYMMDD() {
+            const d = new Date();
+            d.setDate(d.getDate() + 1);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        // Set the minimum selectable expiry date to tomorrow
+        function setExpiryMinToTomorrow() {
+            const el = document.getElementById('announcement-expiry');
+            if (!el) return;
+            el.min = getTomorrowYYYYMMDD();
+        }
+
+        function showLoading(button) {
+            const btnText = button.querySelector('.btn-text');
+            const loading = button.querySelector('.loading');
+            if (btnText) btnText.style.display = 'none';
+            if (loading) loading.style.display = 'inline-block';
+            button.disabled = true;
+        }
+
+        function hideLoading(button) {
+            const btnText = button.querySelector('.btn-text');
+            const loading = button.querySelector('.loading');
+            if (btnText) btnText.style.display = 'inline-block';
+            if (loading) loading.style.display = 'none';
+            button.disabled = false;
+        }
+
+        function showAlert(message, type = 'success') {
+            // Remove existing alerts
+            const existingAlerts = document.querySelectorAll('.alert');
+            existingAlerts.forEach(alert => alert.remove());
+
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = `
+                <div style="padding: 1rem; border-radius: 8px; background: ${type === 'success' ? '#d4edda' : '#f8d7da'}; color: ${type === 'success' ? '#155724' : '#721c24'}; border: 1px solid ${type === 'success' ? '#c3e6cb' : '#f5c6cb'};">
+                    <strong>${type === 'success' ? 'Success!' : 'Error!'}</strong> ${message}
+                    <button type="button" style="background: none; border: none; float: right; font-size: 1.2rem; cursor: pointer; color: inherit;" onclick="this.parentElement.parentElement.remove()">&times;</button>
+                </div>
+            `;
+            document.body.appendChild(alertDiv);
+            setTimeout(() => {
+                if (alertDiv.parentElement) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+
+        // API Functions
+        async function fetchAnnouncements() {
+            try {
+                const search = document.getElementById('search-announcements').value;
+                const type = document.getElementById('type-filter').value;
+                const status = document.getElementById('status-filter').value;
+                const priority = document.getElementById('priority-filter').value;
+                let date = document.getElementById('date-filter').value;
+                // Always send date in YYYY-MM-DD format
+                if (date) {
+                    const d = new Date(date);
+                    date = d.toISOString().slice(0, 10);
+                }
+                let url = '/admin/api/announcements?';
+                const params = new URLSearchParams();
+                if (search) params.append('search', search);
+                if (type !== 'all') params.append('type', type);
+                if (status !== 'all') params.append('status', status);
+                if (priority !== 'all') params.append('priority', priority);
+                if (date) params.append('date', date);
+                if (params.toString()) {
+                    url += params.toString();
+                }
+
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                announcements = await response.json();
+                renderAnnouncementsList();
+                updateStats();
+            } catch (error) {
+                console.error('Error fetching announcements:', error);
+                showAlert('Failed to load announcements: ' + error.message, 'error');
+            }
+        }
+
+        async function fetchAnnouncementById(id) {
+            try {
+                const response = await fetch(`/admin/api/announcements/${id}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching announcement:', error);
+                throw error;
+            }
+        }
+
+        // Main functions
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                fetch('/admin/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = '/';
+                    }
+                })
+                .catch(error => {
+                    console.error('Logout error:', error);
+                    window.location.href = '/admin/login';
+                });
+            }
+        }
+
+        function addNewAnnouncement() {
+            document.getElementById('modal-title').textContent = 'Add New Announcement';
+            document.getElementById('delete-btn').style.display = 'none';
+            
+            // Clear form
+            document.getElementById('announcement-title').value = '';
+            document.getElementById('announcement-content').value = '';
+            document.getElementById('announcement-type').value = 'general';
+            document.getElementById('announcement-priority').value = 'medium';
+            document.getElementById('announcement-expiry').value = '';
+            setExpiryMinToTomorrow();
+            document.getElementById('announcement-active').checked = true;
+            // Reset image inputs
+            const imageInput = document.getElementById('announcement-image');
+            const previewContainer = document.getElementById('image-preview-container');
+            const previewImg = document.getElementById('image-preview');
+            const removeCheckWrapper = document.getElementById('remove-image-check-wrapper');
+            const removeCheck = document.getElementById('remove-image-checkbox');
+            imageInput.value = '';
+            previewImg.src = '';
+            previewContainer.style.display = 'none';
+            removeCheckWrapper.style.display = 'none';
+            if (removeCheck) removeCheck.checked = false;
+            currentImageUrl = null;
+            
+            document.getElementById('announcement-modal').style.display = 'flex';
+            currentAnnouncementId = null;
+        }
+
+        async function saveAnnouncement() {
+            const saveBtn = document.getElementById('save-btn');
+            showLoading(saveBtn);
+
+            const title = document.getElementById('announcement-title').value.trim();
+            const content = document.getElementById('announcement-content').value.trim();
+            const type = document.getElementById('announcement-type').value;
+            const priority = document.getElementById('announcement-priority').value;
+            const expiryDate = document.getElementById('announcement-expiry').value;
+            const isActive = document.getElementById('announcement-active').checked;
+            const scheduleDate = document.getElementById('announcement-schedule') ? document.getElementById('announcement-schedule').value : null;
+            const imageFile = document.getElementById('announcement-image').files[0] || null;
+            const removeImageChecked = document.getElementById('remove-image-checkbox') ? document.getElementById('remove-image-checkbox').checked : false;
+
+            if (!title || !content) {
+                showAlert('Please fill in all required fields.', 'error');
+                hideLoading(saveBtn);
+                return;
+            }
+
+            // Validate expiry must be at least tomorrow (if provided)
+            const minExpiry = getTomorrowYYYYMMDD();
+            if (expiryDate && expiryDate < minExpiry) {
+                showAlert('Expiry date must be in the future (at least tomorrow).', 'error');
+                hideLoading(saveBtn);
+                return;
+            }
+
+            try {
+                let response;
+                const formData = new FormData();
+                formData.append('title', title);
+                formData.append('content', content);
+                formData.append('type', type);
+                formData.append('priority', priority);
+                if (expiryDate) formData.append('expiryDate', expiryDate);
+                formData.append('isActive', isActive ? 'true' : 'false');
+                if (scheduleDate) formData.append('scheduleDate', scheduleDate);
+                if (imageFile) formData.append('image', imageFile);
+                if (currentAnnouncementId && !imageFile && removeImageChecked) {
+                    formData.append('removeImage', 'true');
+                }
+
+                if (currentAnnouncementId) {
+                    // Update existing announcement
+                    response = await fetch(`/admin/api/announcements/${currentAnnouncementId}`, {
+                        method: 'PUT',
+                        body: formData
+                    });
+                } else {
+                    // Create new announcement
+                    response = await fetch('/admin/api/announcements', {
+                        method: 'POST',
+                        body: formData
+                    });
+                }
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showAlert(`Announcement ${currentAnnouncementId ? 'updated' : 'created'} successfully!`);
+                    document.getElementById('announcement-modal').style.display = 'none';
+                    await fetchAnnouncements(); // Refresh the data
+                } else {
+                    const error = await response.json();
+                    showAlert(`Error: ${error.error || 'Failed to save announcement'}`, 'error');
+                }
+            } catch (error) {
+                console.error('Save announcement error:', error);
+                showAlert('Failed to save announcement. Please try again.', 'error');
+            } finally {
+                hideLoading(saveBtn);
+            }
+        }
+
+        function deleteAnnouncement() {
+            document.getElementById('announcement-modal').style.display = 'none';
+            const announcement = announcements.find(a => a._id === currentAnnouncementId);
+            if (announcement) {
+                document.getElementById('delete-announcement-title').textContent = announcement.title;
+            }
+            document.getElementById('delete-modal').style.display = 'flex';
+        }
+
+        async function confirmDelete() {
+            const confirmBtn = document.getElementById('confirm-delete');
+            showLoading(confirmBtn);
+
+            try {
+                const response = await fetch(`/admin/api/announcements/${currentAnnouncementId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showAlert('Announcement deleted successfully!');
+                    document.getElementById('delete-modal').style.display = 'none';
+                    await fetchAnnouncements(); // Refresh the data
+                } else {
+                    const error = await response.json();
+                    showAlert(`Error: ${error.error || 'Failed to delete announcement'}`, 'error');
+                }
+            } catch (error) {
+                console.error('Delete announcement error:', error);
+                showAlert('Failed to delete announcement.', 'error');
+            } finally {
+                hideLoading(confirmBtn);
+                currentAnnouncementId = null;
+            }
+        }
+
+        function cancelDelete() {
+            document.getElementById('delete-modal').style.display = 'none';
+            document.getElementById('announcement-modal').style.display = 'flex';
+        }
+
+        async function openAnnouncementDetails(id) {
+            try {
+                const announcement = await fetchAnnouncementById(id);
+                if (!announcement) return;
+                
+                document.getElementById('modal-title').textContent = 'Edit Announcement';
+                document.getElementById('delete-btn').style.display = 'block';
+                
+                document.getElementById('announcement-title').value = announcement.title;
+                document.getElementById('announcement-content').value = announcement.content;
+                document.getElementById('announcement-type').value = announcement.type;
+                document.getElementById('announcement-priority').value = announcement.priority;
+                document.getElementById('announcement-active').checked = announcement.isActive;
+                currentImageUrl = announcement.imageUrl || null;
+                
+                if (announcement.expiryDate) {
+                    document.getElementById('announcement-expiry').value = announcement.expiryDate.split('T')[0];
+                } else {
+                    document.getElementById('announcement-expiry').value = '';
+                }
+
+                // Enforce future-only selection in the UI
+                setExpiryMinToTomorrow();
+
+                // Image preview setup
+                const previewContainer = document.getElementById('image-preview-container');
+                const img = document.getElementById('image-preview');
+                const removeCheckWrapper = document.getElementById('remove-image-check-wrapper');
+                const removeCheck = document.getElementById('remove-image-checkbox');
+                const imageInput = document.getElementById('announcement-image');
+                imageInput.value = '';
+                removeCheck.checked = false;
+                if (currentImageUrl) {
+                    img.src = currentImageUrl;
+                    previewContainer.style.display = 'block';
+                    removeCheckWrapper.style.display = 'flex';
+                } else {
+                    img.src = '';
+                    previewContainer.style.display = 'none';
+                    removeCheckWrapper.style.display = 'none';
+                }
+                
+                document.getElementById('announcement-modal').style.display = 'flex';
+                currentAnnouncementId = id;
+            } catch (error) {
+                showAlert('Failed to load announcement details.', 'error');
+            }
+        }
+
+        async function toggleAnnouncementStatus(id) {
+            const announcement = announcements.find(a => a._id === id);
+            if (!announcement) return;
+            
+            const newStatus = !announcement.isActive;
+            
+            try {
+                const response = await fetch(`/admin/api/announcements/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        isActive: newStatus
+                    })
+                });
+
+                if (response.ok) {
+                    showAlert(`Announcement ${newStatus ? 'activated' : 'deactivated'} successfully!`);
+                    await fetchAnnouncements(); // Refresh the data
+                } else {
+                    const error = await response.json();
+                    showAlert(`Error: ${error.error || 'Failed to update announcement status'}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error updating announcement status:', error);
+                showAlert('Failed to update announcement status', 'error');
+            }
+        }
+
+        function deactivateAnnouncement(id) {
+            fetch(`/admin/api/announcements/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isActive: false })
+            })
+            .then(response => response.json())
+            .then(data => {
+                showAlert('Announcement deactivated successfully!');
+                fetchAnnouncements(); // Refresh list and stat-cards
+            })
+            .catch(error => {
+                console.error('Deactivate error:', error);
+                showAlert('Failed to deactivate announcement.', 'error');
+            });
+        }
+
+        // Rendering functions
+        function renderAnnouncementsList() {
+            const listContainer = document.getElementById('announcements-list');
+            
+            if (!announcements || announcements.length === 0) {
+                listContainer.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: var(--text-light);">
+                        No announcements found
+                    </div>
+                `;
+                return;
+            }
+
+            listContainer.innerHTML = '';
+            
+            announcements.forEach(announcement => {
+                const isExpired = announcement.expiryDate && new Date(announcement.expiryDate) < new Date();
+                const card = document.createElement('div');
+                card.className = `announcement-card ${announcement.type}`;
+                
+                // Escape content to prevent XSS
+                const title = announcement.title.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                const content = announcement.content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                const createdBy = announcement.createdBy ? 
+                    `${announcement.createdBy.firstName || 'Admin'} ${announcement.createdBy.lastName || ''}` : 
+                    'Admin';
+                
+                card.innerHTML = `
+                    ${announcement.imageUrl ? `<div class="announcement-card-image"><img src="${announcement.imageUrl}" alt="Announcement image"></div>` : ''}
+                    <div class="announcement-header">
+                        <div>
+                            <div class="announcement-title">${title}</div>
+                            <div class="announcement-meta">
+                                <span class="badge badge-type">${announcement.type}</span>
+                                <span class="badge badge-priority ${announcement.priority}">${announcement.priority} priority</span>
+                                ${announcement.isArchived ? '<span class="badge" style="background:#e2e8f0;color:#4a5568;">Archived</span>' : `<span class="badge badge-status ${announcement.isActive ? 'active' : 'inactive'}">${announcement.isActive ? 'Active' : 'Inactive'}</span>`}
+                                ${isExpired ? '<span class="badge" style="background: #fed7d7; color: #c53030;">Expired</span>' : ''}
+                            </div>  
+                        </div>
+                    </div>
+                    <div class="announcement-content">
+                        ${content}
+                    </div>
+                    <div class="announcement-footer">
+                        <div>
+                            <div>Created: ${formatDate(announcement.createdAt)} by ${createdBy}</div>
+                            ${announcement.expiryDate ? `<div>Expires: ${formatDate(announcement.expiryDate)}</div>` : ''}
+                        </div>
+                        <div class="announcement-actions">
+                            <button class="btn btn-primary btn-sm" onclick="openAnnouncementDetails('${announcement._id}')">Edit</button>
+                                                        ${announcement.isArchived ? `
+                                                            <button class="btn btn-primary btn-sm" onclick="restoreAnnouncement('${announcement._id}')">Restore</button>
+                                                        ` : `
+                              <button class="btn ${announcement.isActive ? 'btn-warning' : 'btn-primary'} btn-sm" onclick="toggleAnnouncementStatus('${announcement._id}')">
+                                ${announcement.isActive ? 'Deactivate' : 'Activate'}
+                              </button>
+                              <button class="btn btn-danger btn-sm" onclick="archiveAnnouncement('${announcement._id}')">Archive</button>
+                            `}
+                        </div>
+                    </div>
+                `;
+                
+                listContainer.appendChild(card);
+            });
+        }
+
+        function updateStats() {
+            const totalAnnouncements = announcements.length;
+            const activeAnnouncements = announcements.filter(a => a.isActive).length;
+            const urgentAnnouncements = announcements.filter(a => a.type === 'urgent' && a.isActive).length;
+            const expiredAnnouncements = announcements.filter(a => {
+                return a.expiryDate && new Date(a.expiryDate) < new Date();
+            }).length;
+            document.getElementById('total-announcements').textContent = totalAnnouncements;
+            document.getElementById('active-announcements').textContent = activeAnnouncements;
+            document.getElementById('urgent-announcements').textContent = urgentAnnouncements;
+            document.getElementById('expired-announcements').textContent = expiredAnnouncements;
+        }
+
+        // Quick action functions
+        function viewActiveAnnouncements() {
+            document.getElementById('status-filter').value = 'active';
+            fetchAnnouncements();
+        }
+
+        
+
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load initial data
+            fetchAnnouncements();
+
+            // Set minimum expiry date once the DOM is ready
+            setExpiryMinToTomorrow();
+
+            // Add new announcement button
+            document.getElementById('add-announcement-btn').addEventListener('click', addNewAnnouncement);
+
+            // Attach search and filter listeners directly to inputs
+            document.getElementById('search-announcements').addEventListener('input', fetchAnnouncements);
+            document.getElementById('type-filter').addEventListener('change', fetchAnnouncements);
+            document.getElementById('status-filter').addEventListener('change', fetchAnnouncements);
+            document.getElementById('priority-filter').addEventListener('change', fetchAnnouncements);
+            document.getElementById('date-filter').addEventListener('change', fetchAnnouncements);
+
+            // Refresh button
+            document.getElementById('refresh-announcements').addEventListener('click', function(e) {
+                e.preventDefault();
+                fetchAnnouncements();
+            });
+
+            // Modal functionality
+            document.getElementById('close-modal').addEventListener('click', function() {
+                document.getElementById('announcement-modal').style.display = 'none';
+            });
+
+            document.getElementById('close-delete-modal').addEventListener('click', function() {
+                document.getElementById('delete-modal').style.display = 'none';
+            });
+
+            document.getElementById('cancel-delete').addEventListener('click', cancelDelete);
+
+            // Form submission
+            document.getElementById('announcement-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveAnnouncement();
+            });
+
+            // Button actions
+            document.getElementById('delete-btn').addEventListener('click', deleteAnnouncement);
+            document.getElementById('confirm-delete').addEventListener('click', confirmDelete);
+
+            // Logout button
+            document.getElementById('logout-btn').addEventListener('click', logout);
+
+            // Close modals when clicking outside
+            window.addEventListener('click', function(event) {
+                if (event.target === document.getElementById('announcement-modal')) {
+                    document.getElementById('announcement-modal').style.display = 'none';
+                }
+                if (event.target === document.getElementById('delete-modal')) {
+                    document.getElementById('delete-modal').style.display = 'none';
+                }
+            });
+
+            // Image input change -> preview
+            const imageInput = document.getElementById('announcement-image');
+            const previewContainer = document.getElementById('image-preview-container');
+            const previewImg = document.getElementById('image-preview');
+            const removeBtn = document.getElementById('remove-image-btn');
+            const removeCheckWrapper = document.getElementById('remove-image-check-wrapper');
+            const removeCheck = document.getElementById('remove-image-checkbox');
+
+            imageInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const url = URL.createObjectURL(file);
+                    previewImg.src = url;
+                    previewContainer.style.display = 'block';
+                    // If selecting a new file, uncheck remove
+                    if (removeCheck) removeCheck.checked = false;
+                } else {
+                    previewImg.src = '';
+                    previewContainer.style.display = 'none';
+                }
+            });
+
+            removeBtn.addEventListener('click', function() {
+                // Clear file input and hide preview; if editing existing, show remove checkbox
+                imageInput.value = '';
+                previewImg.src = '';
+                previewContainer.style.display = 'none';
+                if (currentAnnouncementId && currentImageUrl) {
+                    removeCheckWrapper.style.display = 'flex';
+                    removeCheck.checked = true;
+                }
+            });
+        });
+
+        // Archive/Unarchive handlers
+        async function archiveAnnouncement(id) {
+            try {
+                // Use POST for broader compatibility
+                const res = await fetch(`/admin/api/announcements/${id}/archive`, { method: 'POST' });
+                const data = await res.json().catch(() => null);
+                if (!res.ok) throw new Error(data && data.error ? data.error : 'Failed to archive');
+                showAlert('Announcement archived successfully!');
+                await fetchAnnouncements();
+                await updateArchivedCount();
+            } catch (e) {
+                console.error('Archive error:', e);
+                showAlert(`Failed to archive announcement. ${e.message ? e.message : ''}`, 'error');
+            }
+        }
+
+        async function unarchiveAnnouncement(id) {
+            try {
+                const res = await fetch(`/admin/api/announcements/${id}/unarchive`, { method: 'POST' });
+                const data = await res.json().catch(() => null);
+                if (!res.ok) throw new Error(data && data.error ? data.error : 'Failed to restore');
+                showAlert('Announcement restored successfully!');
+                await fetchAnnouncements();
+                await updateArchivedCount();
+                await fetchArchivedAnnouncements();
+            } catch (e) {
+                console.error('Restore error:', e);
+                showAlert(`Failed to restore announcement. ${e.message ? e.message : ''}`, 'error');
+            }
+        }
+
+        // Alias for clarity in UI handlers
+        async function restoreAnnouncement(id) {
+            return unarchiveAnnouncement(id);
+        }
+
+        // Archived modal + list
+        async function updateArchivedCount() {
+            try {
+                const res = await fetch('/admin/api/announcements?status=archived');
+                if (!res.ok) throw new Error('count failed');
+                const data = await res.json();
+                const badge = document.getElementById('archive-badge');
+                if (badge) {
+                    const n = Array.isArray(data) ? data.length : 0;
+                    if (n > 0) { badge.textContent = n; badge.style.display = 'inline-flex'; }
+                    else { badge.style.display = 'none'; }
+                }
+                return data;
+            } catch (e) {
+                return [];
+            }
+        }
+
+        async function fetchArchivedAnnouncements() {
+            try {
+                const res = await fetch('/admin/api/announcements?status=archived');
+                if (!res.ok) throw new Error('Failed');
+                const list = await res.json();
+                renderArchivedList(list);
+            } catch (e) {
+                renderArchivedList([]);
+            }
+        }
+
+        function renderArchivedList(items) {
+            const container = document.getElementById('archived-list');
+            if (!container) return;
+            container.innerHTML = '';
+            if (!Array.isArray(items) || items.length === 0) {
+                container.innerHTML = '<div style="padding:1rem;color:var(--text-light);text-align:center;">No archived announcements.</div>';
+                return;
+            }
+            items.forEach(a => {
+                const el = document.createElement('div');
+                el.className = 'archived-item';
+                const title = (a.title || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                const content = (a.content || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                const date = a.createdAt ? new Date(a.createdAt).toLocaleString() : '';
+                const type = a.type || 'general';
+                const thumb = a.imageUrl ? `<img src="${a.imageUrl}" alt="">` : `<i class="fas fa-image" style="font-size:1.25rem;color:#a0aec0;"></i>`;
+                el.innerHTML = `
+                    <div class="archived-thumb">${thumb}</div>
+                    <div class="archived-body">
+                        <div class="archived-title">${title}</div>
+                        <div class="archived-meta"><span><i class="fas fa-tag"></i> ${type}</span>${date ? `<span><i class=\"fas fa-clock\"></i> ${date}</span>` : ''}</div>
+                        <div style="margin-top:.25rem; color:var(--text-dark); font-size:.9rem;">${content}</div>
+                    </div>
+                    <div class="archived-actions">
+                        <button class="btn btn-primary btn-sm" onclick="restoreAnnouncement('${a._id}')">Restore</button>
+                    </div>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        function openArchiveModal() {
+            const modal = document.getElementById('archive-modal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            fetchArchivedAnnouncements();
+        }
+
+        function closeArchiveModal() {
+            const modal = document.getElementById('archive-modal');
+            if (!modal) return;
+            modal.style.display = 'none';
+        }
+
+        // Initialize archived badge and events
+        document.addEventListener('DOMContentLoaded', async function() {
+            await updateArchivedCount();
+            const openBtn = document.getElementById('open-archive-modal');
+            const closeBtn = document.getElementById('close-archive-modal');
+            if (openBtn) openBtn.addEventListener('click', openArchiveModal);
+            if (closeBtn) closeBtn.addEventListener('click', closeArchiveModal);
+            window.addEventListener('click', function(e) { if (e.target === document.getElementById('archive-modal')) closeArchiveModal(); });
+        });
+    </script>
+
+    <!-- Floating circle archive button -->
+    <button class="archive-fab" id="open-archive-modal" title="Archived Announcements">
+        <i class="fas fa-archive"></i>
+        <span class="archive-badge" id="archive-badge">0</span>
+    </button>
+
+    <!-- Archive Modal -->
+    <div class="modal" id="archive-modal">
+        <div class="modal-content" style="max-width: 720px;">
+            <div class="modal-header">
+                <h3>Archived Announcements</h3>
+                <button class="close-modal" id="close-archive-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="archived-list" class="archived-list">
+                    <div style="text-align:center; padding:1rem; color:var(--text-light);">Loading archived announcements...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

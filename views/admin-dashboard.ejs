@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <style>
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--white);
+        }
+
+        .stat-icon.users {
+            background: linear-gradient(135deg, var(--accent-color), #3182ce);
+        }
+
+        .stat-icon.active {
+            background: linear-gradient(135deg, var(--success-color), #38a169);
+        }
+
+        .stat-icon.pending {
+            background: linear-gradient(135deg, var(--warning-color), #dd6b20);
+        }
+
+        .stat-icon.announcements {
+            background: linear-gradient(135deg, #9f7aea, #805ad5);
+        }
+
+        .stat-info h3 {
+            font-size: 0.875rem;
+            color: var(--text-light);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-info .number {
+            font-size: 1.75rem;
+            font-weight: bold;
+            color: var(--primary-dark);
+        }
+        /* Table Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .data-table th {
+            background: var(--light-bg);
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .data-table tr:hover {
+            background: var(--light-bg);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: #c6f6d5;
+            color: #276749;
+        }
+
+        .status-inactive {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .status-pending {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .status-completed {
+            background: #c6f6d5;
+            color: #276749;
+        }
+
+        .status-in-progress {
+            background: #feebcb;
+            color: #d69e2e;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: var(--accent-color);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: #3182ce;
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: var(--white);
+        }
+
+        .btn-danger:hover {
+            background: #e53e3e;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-light);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #cbd5e0;
+        }
+
+        
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .dashboard-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .data-table {
+                font-size: 0.875rem;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 0.5rem 0.75rem;
+            }
+        }
+
+        /* Loading animation */
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .loading::after {
+            content: 'Loading...';
+            display: block;
+            text-align: center;
+            padding: 1rem;
+            color: var(--text-light);
+        }
+
+        /* Activity Timeline Styles */
+        .activity-timeline {
+            padding: 1rem 0;
+        }
+
+        .activity-item {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            transition: background 0.2s ease;
+        }
+
+        .activity-item:hover {
+            background: var(--light-bg);
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1rem;
+            color: var(--white);
+        }
+
+        .activity-icon.user {
+            background: linear-gradient(135deg, var(--accent-color), #3182ce);
+        }
+
+        .activity-icon.announcement {
+            background: linear-gradient(135deg, #9f7aea, #805ad5);
+        }
+
+        .activity-icon.appointment {
+            background: linear-gradient(135deg, var(--success-color), #38a169);
+        }
+
+        .activity-icon.request {
+            background: linear-gradient(135deg, var(--warning-color), #dd6b20);
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-description {
+            font-size: 0.875rem;
+            color: var(--text-light);
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-time {
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" role="navigation" aria-label="Admin navigation">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-cog"></i><span>Admin Panel</span></h2>
+                <button class="toggle-btn" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/admin/dashboard" class="active" data-tooltip="Dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+                <li><a href="/admin/analytics" data-tooltip="Analytics"><i class="fas fa-chart-bar"></i><span>Analytics</span></a></li>
+                <li><a href="/admin/residents" data-tooltip="Residents"><i class="fas fa-users"></i><span>Residents</span></a></li>
+                <li><a href="/admin/requests/residents" data-tooltip="Resident Requests"><i class="fas fa-user-clock"></i><span>Resident Requests</span></a></li>
+                <li><a href="/admin/schedule" data-tooltip="Schedule"><i class="fas fa-calendar-alt"></i><span>Schedule</span></a></li>
+                <li><a href="/admin/announcements" data-tooltip="Announcements"><i class="fas fa-bullhorn"></i><span>Announcements</span></a></li>
+                <li><a href="/admin/inventory" data-tooltip="Inventory"><i class="fas fa-inbox"></i><span>Inventory</span></a></li>
+                <li><a href="/admin/settings" data-tooltip="Settings"><i class="fas fa-cog"></i><span>Settings</span></a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <h1>Admin Dashboard</h1>
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <%= username.charAt(0).toUpperCase() %>
+                    </div>
+                    <span>Welcome, <%= username %> (<%= admin.role %>)</span>
+                    <button class="logout-btn" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                </div>
+            </header>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon users">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Total Residents</h3>
+                        <div class="number"><%= totalUsers %></div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon active">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Active Residents</h3>
+                        <div class="number"><%= activeUsers %></div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon pending">
+                        <i class="fas fa-user-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Pending Resident Requests</h3>
+                        <div class="number"><%= typeof pendingResidentRequests !== 'undefined' ? pendingResidentRequests : 0 %></div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon announcements">
+                        <i class="fas fa-bullhorn"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Active Announcements</h3>
+                        <div class="number"><%= typeof activeAnnouncements !== 'undefined' ? activeAnnouncements : 0 %></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Residents Section -->
+            <section class="content-section">
+                <div class="section-header">
+                    <h2>Recent Residents</h2>
+                    <a href="/admin/residents" class="view-all">View All</a>
+                </div>
+                <div class="table-container">
+                    <div class="table-responsive">
+                        <% if (users && users.length > 0) { %>
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Purok</th>
+                                        <th>Phone</th>
+                                        <th>Status</th>
+                                        <th>Joined</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-residents-body">
+                                    <% users.slice(0, 5).forEach(user => { %>
+                                    <tr>
+                                        <td><strong><%= user.firstName %> <%= user.lastName %></strong></td>
+                                        <td><%= user.email %></td>
+                                        <td><%= user.unitNumber %></td>
+                                        <td><%= user.phone %></td>
+                                        <td>
+                                            <% 
+                                                const ONLINE_WINDOW_MS = 10 * 60 * 1000;
+                                                const lastLoginTime = user.lastLogin ? new Date(user.lastLogin).getTime() : 0;
+                                                const isOnline = user.isActive && lastLoginTime && (Date.now() - lastLoginTime <= ONLINE_WINDOW_MS);
+                                            %>
+                                            <span class="status-badge <%= isOnline ? 'status-online' : 'status-offline' %>">
+                                                <%= isOnline ? 'Online' : 'Offline' %>
+                                            </span>
+                                        </td>
+                                        <td><%= user.createdAt.toLocaleDateString() %></td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <button class="btn btn-primary btn-sm" onclick="viewUser('<%= user._id %>')">
+                                                    <i class="fas fa-eye"></i> View
+                                                </button>
+                                                <button class="btn btn-danger btn-sm" onclick="deactivateUser('<%= user._id %>')">
+                                                    <i class="fas <%= user.isActive ? 'fa-user-slash' : 'fa-user-check' %>"></i>
+                                                    <%= user.isActive ? 'Deactivate' : 'Activate' %>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <% }); %>
+                                </tbody>
+                            </table>
+                        <% } else { %>
+                            <div class="empty-state">
+                                <i class="fas fa-users"></i>
+                                <h3>No Residents Yet</h3>
+                                <p>When residents register, they will appear here.</p>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recent Activity Section -->
+            <section class="content-section">
+                <div class="section-header">
+                    <h2>Recent Activity</h2>
+                    <button class="btn btn-sm" onclick="refreshRecentActivity()" style="padding: 0.5rem 1rem;">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+                <div class="table-container">
+                    <div class="table-responsive">
+                        <div id="recent-activity-container">
+                            <div class="empty-state">
+                                <i class="fas fa-clock"></i>
+                                <h3>Loading Activity...</h3>
+                                <p>Please wait while we fetch recent activity.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            
+        </main>
+    </div>
+    <script src="/js/admin.js"></script>
+    <script>
+        document.getElementById('logout-btn').addEventListener('click', function() {
+            if (confirm('Are you sure you want to logout?')) {
+                fetch('/admin/logout', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = '/';
+                    }
+                })
+                .catch(error => {
+                    console.error('Logout error:', error);
+                    window.location.href = '/';
+                });
+            }
+        });
+
+        function viewUser(userId) {
+            alert('View user details for: ' + userId);
+            // Implement view user functionality
+        }
+
+        function deactivateUser(userId) {
+            if (confirm('Are you sure you want to change this user\'s status?')) {
+                // Implement user activation/deactivation
+                fetch(`/admin/users/${userId}/toggle-status`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
+            }
+        }
+
+        const ONLINE_WINDOW_MS = 10 * 60 * 1000;
+        function isOnline(user) {
+            if (!user || !user.isActive || !user.lastLogin) return false;
+            const t = new Date(user.lastLogin).getTime();
+            if (!t) return false;
+            return (Date.now() - t) <= ONLINE_WINDOW_MS;
+        }
+        function renderRecentResidents(rows) {
+            const tbody = document.getElementById('recent-residents-body');
+            if (!tbody) return;
+            if (!rows || !rows.length) { tbody.innerHTML = ''; return; }
+            tbody.innerHTML = rows.map(user => `
+                <tr>
+                    <td><strong>${(user.firstName||'')} ${(user.lastName||'')}</strong></td>
+                    <td>${user.email || '-'}</td>
+                    <td>${user.unitNumber || '-'}</td>
+                    <td>${user.phone || '-'}</td>
+                    <td>
+                        <span class="status-badge ${isOnline(user) ? 'status-active' : 'status-inactive'}">
+                            ${isOnline(user) ? 'Online' : 'Offline'}
+                        </span>
+                    </td>
+                    <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="viewUser('${user._id}')">View</button>
+                        <button class="btn btn-danger btn-sm" onclick="deactivateUser('${user._id}')">${user.isActive ? 'Deactivate' : 'Activate'}</button>
+                    </td>
+                </tr>`).join('');
+        }
+        function updateRecentResidents() {
+            fetch('/admin/api/residents')
+                .then(r => r.json())
+                .then(data => {
+                    if (!Array.isArray(data)) return;
+                    data.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+                    renderRecentResidents(data.slice(0,5));
+                })
+                .catch(() => {});
+        }
+        // Auto-refresh data every 30 seconds
+        setInterval(() => {
+            updateRecentResidents();
+            console.log('Auto-refreshing dashboard data...');
+        }, 30000);
+        // SSE for instant updates (e.g., user logout -> offline)
+        try {
+            const es = new EventSource('/admin/events');
+            es.onmessage = (evt) => {
+                try {
+                    const msg = JSON.parse(evt.data);
+                    if (msg && msg.type === 'userStatus' && msg.payload) {
+                        const { userId, isActive } = msg.payload;
+                        // Update the row in recent residents if present
+                        const tbody = document.getElementById('recent-residents-body');
+                        if (!tbody) return;
+                        // Fetch fresh data for consistency
+                        updateRecentResidents();
+                    }
+                } catch (e) { /* ignore */ }
+            };
+        } catch (e) { /* ignore SSE failures */ }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case '1':
+                        e.preventDefault();
+                        location.href = '/admin/dashboard';
+                        break;
+                    case '2':
+                        e.preventDefault();
+                        location.href = '/admin/residents';
+                        break;
+                    case 'l':
+                        e.preventDefault();
+                        document.getElementById('logout-btn').click();
+                        break;
+                }
+            }
+        });
+
+        function updateActiveAnnouncements() {
+            fetch('/admin/api/announcements?status=active')
+                .then(response => response.json())
+                .then(data => {
+                    const count = Array.isArray(data) ? data.length : 0;
+                    // Update the correct stat card (Active Announcements)
+                    try {
+                        const cards = document.querySelectorAll('.stat-card');
+                        for (const card of cards) {
+                            const h3 = card.querySelector('.stat-info h3');
+                            if (h3 && /Active\s+Announcements/i.test(h3.textContent)) {
+                                const num = card.querySelector('.stat-info .number');
+                                if (num) num.textContent = count;
+                                break;
+                            }
+                        }
+                    } catch (_) { /* ignore */ }
+                })
+                .catch(err => console.error('Error fetching active announcements:', err));
+        }
+        // Initial fetch
+        updateActiveAnnouncements();
+        updateRecentResidents();
+        // Update every 10 seconds
+        setInterval(updateActiveAnnouncements, 10000);
+
+        // Recent Activity Functions
+        function formatTimeAgo(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+            
+            if (seconds < 60) return 'Just now';
+            if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+            if (seconds < 604800) return `${Math.floor(seconds / 86400)} days ago`;
+            return date.toLocaleDateString();
+        }
+
+        function getActivityIcon(type) {
+            const icons = {
+                'user_registered': { class: 'user', icon: 'fa-user-plus' },
+                'user_login': { class: 'user', icon: 'fa-sign-in-alt' },
+                'user_logout': { class: 'user', icon: 'fa-sign-out-alt' },
+                'announcement_created': { class: 'announcement', icon: 'fa-bullhorn' },
+                'announcement_updated': { class: 'announcement', icon: 'fa-edit' },
+                'appointment_scheduled': { class: 'appointment', icon: 'fa-calendar-check' },
+                'appointment_completed': { class: 'appointment', icon: 'fa-check-circle' },
+                'request_submitted': { class: 'request', icon: 'fa-file-alt' },
+                'request_approved': { class: 'request', icon: 'fa-check' },
+                'request_declined': { class: 'request', icon: 'fa-times' }
+            };
+            return icons[type] || { class: 'user', icon: 'fa-circle' };
+        }
+
+        function renderRecentActivity(activities) {
+            const container = document.getElementById('recent-activity-container');
+            if (!container) return;
+
+            if (!activities || activities.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-clock"></i>
+                        <h3>No Recent Activity</h3>
+                        <p>System activity will appear here.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = `
+                <div class="activity-timeline">
+                    ${activities.map(activity => {
+                        const iconData = getActivityIcon(activity.type);
+                        return `
+                            <div class="activity-item">
+                                <div class="activity-icon ${iconData.class}">
+                                    <i class="fas ${iconData.icon}"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <div class="activity-title">${activity.title || 'Activity'}</div>
+                                    <div class="activity-description">${activity.description || ''}</div>
+                                    <div class="activity-time">${formatTimeAgo(activity.createdAt || activity.timestamp)}</div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+            container.innerHTML = html;
+        }
+
+        async function fetchRecentActivity() {
+            try {
+                // Fetch various recent activities
+                const [users, appointments, requests] = await Promise.all([
+                    fetch('/admin/api/residents').then(r => r.json()).catch(() => []),
+                    fetch('/admin/schedule/appointments').then(r => r.json()).then(d => d.appointments || []).catch(() => []),
+                    fetch('/admin/api/requests').then(r => r.json()).catch(() => [])
+                ]);
+
+                const activities = [];
+
+                // Add recent user registrations
+                if (Array.isArray(users)) {
+                    users.slice(0, 3).forEach(user => {
+                        activities.push({
+                            type: 'user_registered',
+                            title: 'New Resident Registered',
+                            description: `${user.firstName} ${user.lastName} joined the system`,
+                            createdAt: user.createdAt,
+                            timestamp: user.createdAt
+                        });
+                    });
+                }
+
+                // Add recent appointments
+                if (Array.isArray(appointments)) {
+                    appointments.slice(0, 3).forEach(apt => {
+                        const patientName = apt.patientId ? `${apt.patientId.firstName || ''} ${apt.patientId.lastName || ''}` : 'A resident';
+                        activities.push({
+                            type: apt.status === 'completed' ? 'appointment_completed' : 'appointment_scheduled',
+                            title: apt.status === 'completed' ? 'Appointment Completed' : 'Appointment Scheduled',
+                            description: `${patientName} - ${apt.appointmentType || 'General'}`,
+                            createdAt: apt.createdAt || apt.appointmentDate,
+                            timestamp: apt.createdAt || apt.appointmentDate
+                        });
+                    });
+                }
+
+                // Add recent requests
+                if (Array.isArray(requests)) {
+                    requests.slice(0, 3).forEach(req => {
+                        const userName = req.userId ? `${req.userId.firstName || ''} ${req.userId.lastName || ''}` : 'A resident';
+                        activities.push({
+                            type: req.status === 'approved' ? 'request_approved' : 'request_submitted',
+                            title: req.status === 'approved' ? 'Request Approved' : 'New Request Submitted',
+                            description: `${userName} - ${req.requestType || 'General Request'}`,
+                            createdAt: req.createdAt || req.requestDate,
+                            timestamp: req.createdAt || req.requestDate
+                        });
+                    });
+                }
+
+                // Sort by date and take top 10
+                activities.sort((a, b) => new Date(b.createdAt || b.timestamp) - new Date(a.createdAt || a.timestamp));
+                renderRecentActivity(activities.slice(0, 10));
+            } catch (error) {
+                console.error('Error fetching recent activity:', error);
+                const container = document.getElementById('recent-activity-container');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h3>Error Loading Activity</h3>
+                            <p>Unable to fetch recent activity. Please try again.</p>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function refreshRecentActivity() {
+            const container = document.getElementById('recent-activity-container');
+            if (container) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <h3>Refreshing...</h3>
+                    </div>
+                `;
+            }
+            fetchRecentActivity();
+        }
+
+        // Initial fetch
+        fetchRecentActivity();
+
+        // Auto-refresh activity every 30 seconds
+        setInterval(fetchRecentActivity, 30000);
+    </script>
+</body>
+</html>

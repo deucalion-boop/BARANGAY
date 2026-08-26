@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/user.css">
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.css' rel='stylesheet' />
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+    <style>
+        .cards-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; }
+        .card { background: var(--white); padding: 1.25rem; border-radius: 12px; box-shadow: var(--shadow); }
+        .card .card-top { display:flex; gap:0.75rem; align-items:center; }
+        .card .card-top .icon { font-size:1.5rem; color:var(--primary-dark); background: rgba(0,0,0,0.03); padding:10px; border-radius:8px; }
+        .card .card-title { font-size:1.125rem; font-weight:700; margin-bottom:6px; }
+        .card .card-desc { color: var(--text-light); }
+        .card .card-actions { margin-top:12px; }
+        .btn { padding: 0.5rem 1rem; border-radius:8px; background: var(--accent-color); color: var(--white); text-decoration:none; font-weight:600; }
+        .btn.ghost { background: transparent; color: var(--accent-color); border: 1px solid rgba(66,153,225,0.12); }
+
+        .logout { margin-top:1rem; }
+
+    /* Avatar dropdown */
+    .avatar-wrapper { position: relative; display: inline-flex; align-items: center; gap:.5rem; cursor: pointer; }
+    .avatar-wrapper .user-avatar { width:32px; height:32px; font-size:0.9rem; display:flex; align-items:center; justify-content:center; overflow:hidden; border-radius:50%; background: #eef2ff; color:#334155; font-weight:700; }
+    .profile-dropdown { position:absolute; right:0; top: calc(100% + 8px); background:#fff; border:1px solid #e2e8f0; border-radius:10px; box-shadow: 0 12px 28px rgba(0,0,0,.12); min-width: 180px; display:none; z-index: 3004; overflow:hidden; }
+    .profile-dropdown a { display:flex; align-items:center; gap:.5rem; padding:.6rem .85rem; color:#1f2937; text-decoration:none; font-size:.9rem; }
+    .profile-dropdown a i { width:18px; text-align:center; color:#64748b; }
+    .profile-dropdown a:hover { background:#f8fafc; }
+    .avatar-wrapper.open .profile-dropdown { display:block; }
+
+
+
+
+        @media (max-width: 768px) { .dashboard-container { flex-direction: column; } .sidebar { width:100%; } }
+    /* Calendar card */
+    .calendar-card { margin-top: 1.25rem; }
+    .calendar-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:.5rem; }
+    .calendar-controls { display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
+    .segmented { display:inline-flex; border:1px solid #dbeafe; background:#eff6ff; border-radius:999px; overflow:hidden; }
+    .segmented button { background:transparent; color:#1e3a8a; border:none; padding:.4rem .8rem; font-weight:700; cursor:pointer; transition:all .2s ease; }
+    .segmented button:hover { background:#dbeafe; }
+    .segmented button.active { background:linear-gradient(135deg, var(--accent-color), #2563eb); color:#fff; }
+    #user-calendar { min-height: 600px; }
+    .calendar-shell { position:relative; }
+    .calendar-loading { position:absolute; inset:0; display:none; align-items:center; justify-content:center; background:rgba(255,255,255,0.6); z-index:2; }
+    .calendar-loading.show { display:flex; }
+
+        /* Appointment view modal */
+        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; }
+        .modal-content { background:#fff; width:92%; max-width:520px; margin:6% auto; border-radius:12px; overflow:hidden; box-shadow:0 12px 28px rgba(0,0,0,.22); }
+        .modal-header { display:flex; align-items:center; justify-content:space-between; padding:1rem 1.25rem; border-bottom:1px solid #e2e8f0; }
+        .modal-header h3 { margin:0; font-size:1.1rem; display:flex; align-items:center; gap:.5rem; }
+        .close-modal { font-size:22px; cursor:pointer; color:#64748b; }
+        .modal-body { padding:1rem 1.25rem; }
+        .modal-row { display:flex; gap:.75rem; margin:.35rem 0; align-items:center; }
+        .label { width:120px; color:#64748b; font-weight:600; font-size:.9rem; }
+        .value { color:#1f2937; font-size:.95rem; }
+        .status-badge { display:inline-flex; align-items:center; gap:.35rem; padding:.25rem .6rem; border-radius:999px; font-weight:700; font-size:.8rem; color:#fff; }
+        .modal-actions { display:flex; justify-content:flex-end; gap:.5rem; padding: .75rem 1.25rem 1.25rem; }
+        .btn-outline { background:transparent; color:#4b5563; border:1px solid #cbd5e1; }
+
+        /* FullCalendar button theme (match admin schedule) */
+        .fc .fc-button {
+            background: linear-gradient(135deg, var(--accent-color), #2563eb) !important;
+            border: none !important;
+            padding: 0.5rem 1rem !important;
+            font-weight: 600 !important;
+            color: #fff !important;
+            transition: all 0.3s ease !important;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25) !important;
+        }
+        .fc .fc-button:hover {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+            transform: translateY(-2px);
+        }
+        .fc .fc-button:disabled {
+            opacity: 0.6 !important;
+            transform: none !important;
+        }
+
+        /* Custom Today button to match calendar buttons */
+        #todayBtn {
+            background: linear-gradient(135deg, var(--accent-color), #2563eb);
+            color: #fff;
+            border: none;
+            padding: 0.5rem 0.9rem;
+            border-radius: 8px;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+        }
+        #todayBtn:hover {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            transform: translateY(-2px);
+        }
+
+        /* Calendar visual enhancements */
+        .fc .fc-daygrid-day-number { font-weight:700; color:#0f172a; }
+        .fc .fc-day-today { background: #eff6ff !important; }
+        .fc .fc-daygrid-day.fc-day-sat, .fc .fc-daygrid-day.fc-day-sun { background:#f8fafc; }
+        .fc .fc-event { border:none !important; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,.08); font-weight:600; }
+        .fc .fc-event:hover { transform: translateY(-1px); box-shadow:0 4px 10px rgba(0,0,0,.12); }
+        .fc .fc-toolbar-title { font-weight:800; color:#0f172a; }
+
+        /* Legend */
+        .calendar-legend { display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; margin:.35rem 0 .75rem; }
+        .legend-item { display:flex; align-items:center; gap:.35rem; font-size:.85rem; color:#334155; }
+        .legend-dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar" role="navigation" aria-label="User navigation">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-home"></i><span>Barangay</span></h2>
+                <button class="toggle-btn" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+                <div style="font-size:.9rem; opacity:.9; margin-top:.5rem;">Resident Dashboard</div>
+            </div>
+
+            <ul class="sidebar-menu">
+                <li><a href="/users/dashboard" class="active" data-tooltip="Dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+                <li><a href="/users/announcements" data-tooltip="Announcements"><i class="fas fa-bullhorn"></i><span>Announcements</span></a></li>
+                <li><a href="/users/schedule" data-tooltip="Schedule"><i class="fas fa-calendar-alt"></i><span>Schedule</span></a></li>
+                <li><a id="logout-btn" href="/users/logout" data-tooltip="Logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
+            </ul>
+        </aside>
+        <div class="overlay"></div>
+
+        <main class="main-content">
+            <div class="header">
+                <h1>Welcome, <%= user.firstName %>!</h1>
+                <div class="user-info"> 
+                    <div style="text-align:right;">
+                        <div style="font-weight:700; display:flex; align-items:center; gap:.5rem; justify-content:flex-end;">
+                            <% const _avatarUrl = (user && (user.avatarUrl || user.profileImageUrl || user.imageUrl || user.photoUrl)); %>
+                            <div class="avatar-wrapper">
+                                <div class="user-avatar">
+                                    <% if (_avatarUrl) { %>
+                                        <img src="<%= _avatarUrl %>" alt="Profile" style="width:100%; height:100%; object-fit:cover; border-radius:50%;" />
+                                    <% } else { %>
+                                        <%= (user.name && user.name.length) ? user.name.charAt(0).toUpperCase() : 'U' %>
+                                    <% } %>
+                                </div>
+                                <span><%= user.name %></span>
+                                <div class="profile-dropdown">
+                                    <a href="/users/settings"><i class="fas fa-gear"></i> Settings</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="font-size:.9rem; color:var(--text-light);"><%= user.email %> | Purok <%= user.unitNumber %></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-top">
+                        <div class="icon"><i class="fas fa-bullhorn"></i></div>
+                        <div>
+                            <div class="card-title">Announcements</div>
+                            <div class="card-desc">Latest community announcements and notices from administration.</div>
+                        </div>
+                    </div>
+                    <div class="card-actions"><a href="/users/announcements" class="btn">View Announcements</a></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-top">
+                        <div class="icon"><i class="fas fa-calendar-alt"></i></div>
+                        <div>
+                            <div class="card-title">Schedule</div>
+                            <div class="card-desc">View community schedule and request bookings for facilities or events.</div>
+                        </div>
+                    </div>
+                    <div class="card-actions"><a href="/users/schedule" class="btn">View Schedule</a></div>
+                </div>
+            </div>
+
+            <div class="card calendar-card">
+                <div class="calendar-header">
+                    <div style="display:flex; align-items:center; gap:.75rem;">
+                        <div class="icon"><i class="fas fa-calendar"></i></div>
+                        <div>
+                            <div class="card-title">My Appointments</div>
+                            <div class="card-desc">Your scheduled and past appointments at a glance.</div>
+                        </div>
+                    </div>
+                    <div class="calendar-controls">
+                        <div class="segmented" role="tablist" aria-label="Calendar view">
+                            <button type="button" class="active" data-view="dayGridMonth" role="tab" aria-selected="true">Month</button>
+                            <button type="button" data-view="timeGridWeek" role="tab" aria-selected="false">Week</button>
+                            <button type="button" data-view="timeGridDay" role="tab" aria-selected="false">Day</button>
+                            <button type="button" data-view="listWeek" role="tab" aria-selected="false">List</button>
+                        </div>
+                        <button class="btn btn-ghost" type="button" id="todayBtn" title="Go to today">
+                            <i class="fas fa-bullseye"></i> Today
+                        </button>
+                    </div>
+                </div>
+                <div class="calendar-legend">
+                    <div class="legend-item"><span class="legend-dot" style="background:#4299e1"></span> Scheduled</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#48bb78"></span> Completed</div>
+                </div>
+                <div class="calendar-shell">
+                    <div class="calendar-loading" id="calendarLoading"><i class="fas fa-spinner fa-spin" style="color:#1d4ed8;"></i></div>
+                    <div id="user-calendar"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Appointment View Modal -->
+    <div id="viewAppointmentModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="viewAppointmentTitle">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="viewAppointmentTitle"><i class="fas fa-calendar-check"></i> Appointment Details</h3>
+                <span class="close-modal" id="viewModalClose">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="modal-row"><div class="label">Type</div><div class="value" id="aptType">-</div></div>
+                <div class="modal-row"><div class="label">Date/Time</div><div class="value" id="aptWhen">-</div></div>
+                <div class="modal-row"><div class="label">Status</div><div class="value"><span id="aptStatus" class="status-badge">-</span></div></div>
+                <div class="modal-row"><div class="label">Notes</div><div class="value" id="aptNotes">-</div></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" type="button" id="viewModalCancel">Close</button>
+                <a href="/users/schedule" id="viewModalAction" class="btn" style="background:#4299e1">Go to My Schedule</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/user.js"></script>
+    <script>
+        // Listen for realtime events (forceLogout, announcement updates)
+        if (typeof EventSource !== 'undefined') {
+            const es = new EventSource('/users/events');
+            es.onmessage = (evt) => {
+                try {
+                    const msg = JSON.parse(evt.data);
+                    if (!msg || !msg.type) return;
+
+                    // Handle forced logout for this user
+                    if (msg.type === 'forceLogout' && msg.payload && msg.payload.userId === '<%= user.id %>') {
+                        alert('Your account has been deactivated by an administrator. You will be logged out.');
+                        window.location.href = '/users/logout';
+                        return;
+                    }
+                } catch (e) {
+                    // ignore parsing errors
+                }
+            };
+        }
+        // Avatar dropdown: click to toggle, click outside to close
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize calendar after DOM is ready
+            initDashboardCalendar();
+            initViewAppointmentModal();
+            document.querySelectorAll('.avatar-wrapper').forEach(function(wrapper){
+                const dropdown = wrapper.querySelector('.profile-dropdown');
+                if (!dropdown) return;
+                // Toggle on click
+                wrapper.addEventListener('click', function(e){
+                    e.stopPropagation();
+                    // close other open ones
+                    document.querySelectorAll('.avatar-wrapper.open').forEach(w => { if (w !== wrapper) w.classList.remove('open'); });
+                    wrapper.classList.toggle('open');
+                });
+                // Prevent clicks inside dropdown from propagating to document
+                dropdown.addEventListener('click', function(e){ e.stopPropagation(); });
+            });
+            // Close on outside click
+            document.addEventListener('click', function(){
+                document.querySelectorAll('.avatar-wrapper.open').forEach(w => w.classList.remove('open'));
+            });
+        });
+
+        function getStatusColor(status) {
+            const colors = {
+                scheduled: '#4299e1',
+                completed: '#48bb78'
+            };
+            return colors[status] || '#4299e1';
+        }
+
+        async function initDashboardCalendar() {
+            try {
+                const el = document.getElementById('user-calendar');
+                if (!el || !window.FullCalendar) return;
+
+                // Fetch events
+                const loadingEl = document.getElementById('calendarLoading');
+                if (loadingEl) loadingEl.classList.add('show');
+                const resp = await fetch('/users/api/appointments');
+                const data = await resp.json();
+                const events = (data && data.success && Array.isArray(data.events)) ? data.events : [];
+
+                const calendar = new FullCalendar.Calendar(el, {
+                    initialView: 'dayGridMonth',
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+                    },
+                    height: 'auto',
+                    datesSet: function(info) {
+                        // Sync segmented view state
+                        setActiveViewToggle(info.view.type);
+                    },
+                    eventClassNames: function(arg) {
+                        const s = (arg.event.extendedProps && arg.event.extendedProps.status) || 'scheduled';
+                        return [ `apt-${s}` ];
+                    },
+                    events: events.map(e => ({
+                        ...e,
+                        backgroundColor: getStatusColor(e.extendedProps?.status),
+                        borderColor: getStatusColor(e.extendedProps?.status)
+                    })),
+                    eventClick: function(info) {
+                        try {
+                            openViewAppointmentModal(info.event);
+                        } catch (e) { console.error('open modal failed', e); }
+                    },
+                    eventDidMount: function(info) {
+                        const s = info.event.extendedProps.status;
+                        info.el.title = `${info.event.title}\nStatus: ${s || 'scheduled'}`;
+                    }
+                });
+                // Expose globally so external controls can interact
+                window.userCalendar = calendar;
+                calendar.render();
+                // Hook segmented controls
+                bindViewToggleControls();
+                // Wire custom Today button
+                const todayBtn = document.getElementById('todayBtn');
+                if (todayBtn) {
+                    todayBtn.addEventListener('click', function(){
+                        try { window.userCalendar && window.userCalendar.today(); } catch (e) {}
+                    });
+                }
+                if (loadingEl) loadingEl.classList.remove('show');
+            } catch (err) {
+                console.error('Failed to initialize calendar:', err);
+            }
+        }
+
+        function bindViewToggleControls() {
+            const container = document.querySelector('.segmented');
+            if (!container) return;
+            container.querySelectorAll('button[data-view]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const view = btn.getAttribute('data-view');
+                    if (window.userCalendar && view) {
+                        window.userCalendar.changeView(view);
+                        setActiveViewToggle(view);
+                    }
+                });
+            });
+        }
+
+        function setActiveViewToggle(view) {
+            const container = document.querySelector('.segmented');
+            if (!container) return;
+            container.querySelectorAll('button[data-view]').forEach(btn => {
+                const isActive = btn.getAttribute('data-view') === view;
+                btn.classList.toggle('active', isActive);
+                btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            });
+        }
+
+        function initViewAppointmentModal() {
+            const modal = document.getElementById('viewAppointmentModal');
+            const closeBtn = document.getElementById('viewModalClose');
+            const cancelBtn = document.getElementById('viewModalCancel');
+            function close() { modal.style.display = 'none'; }
+            closeBtn && closeBtn.addEventListener('click', close);
+            cancelBtn && cancelBtn.addEventListener('click', close);
+            modal && modal.addEventListener('click', function(e){ if (e.target === modal) close(); });
+            document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });
+        }
+
+        function openViewAppointmentModal(event) {
+            const modal = document.getElementById('viewAppointmentModal');
+            if (!modal) return;
+            const typeEl = document.getElementById('aptType');
+            const whenEl = document.getElementById('aptWhen');
+            const statusEl = document.getElementById('aptStatus');
+            const notesEl = document.getElementById('aptNotes');
+            const actionBtn = document.getElementById('viewModalAction');
+
+            const status = event.extendedProps?.status || 'scheduled';
+            const color = getStatusColor(status);
+
+            typeEl.textContent = event.extendedProps?.type || event.title || 'Appointment';
+            try {
+                const dt = event.start ? new Date(event.start) : null;
+                whenEl.textContent = dt ? dt.toLocaleString() : '-';
+            } catch { whenEl.textContent = '-'; }
+            notesEl.textContent = (event.extendedProps && event.extendedProps.notes) ? event.extendedProps.notes : '—';
+
+            statusEl.textContent = status;
+            statusEl.style.background = color;
+            actionBtn.style.background = color;
+
+            modal.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

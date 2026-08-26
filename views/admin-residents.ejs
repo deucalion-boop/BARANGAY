@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resident Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <style>
+        /* Search and Filter Styles */
+        .search-filter-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+        }
+
+        .filter-dropdown {
+            position: relative;
+            min-width: 150px;
+        }
+
+        .filter-dropdown select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: var(--white);
+            font-size: 0.875rem;
+            cursor: pointer;
+            appearance: none;
+        }
+
+        .filter-dropdown::after {
+            content: '\f078';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+            pointer-events: none;
+        }
+
+
+
+
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .search-filter-bar {
+                flex-direction: column;
+            }
+
+            .search-box {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" role="navigation" aria-label="Admin navigation">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-cog"></i><span>Admin Panel</span></h2>
+                <button class="toggle-btn" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/admin/dashboard" data-tooltip="Dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+                <li><a href="/admin/analytics" data-tooltip="Analytics"><i class="fas fa-chart-bar"></i><span>Analytics</span></a></li>
+                <li><a href="/admin/residents" class="active" data-tooltip="Residents"><i class="fas fa-users"></i><span>Residents</span></a></li>
+                <li><a href="/admin/requests/residents" data-tooltip="Resident Requests"><i class="fas fa-user-clock"></i><span>Resident Requests</span></a></li>
+                <li><a href="/admin/schedule" data-tooltip="Schedule"><i class="fas fa-calendar-alt"></i><span>Schedule</span></a></li>
+                <li><a href="/admin/announcements" data-tooltip="Announcements"><i class="fas fa-bullhorn"></i><span>Announcements</span></a></li>
+                <li><a href="/admin/inventory" data-tooltip="Inventory"><i class="fas fa-inbox"></i><span>Inventory</span></a></li>
+                <li><a href="/admin/settings" data-tooltip="Settings"><i class="fas fa-cog"></i><span>Settings</span></a></li>
+            </ul>
+        </aside>
+
+        <div class="overlay"></div>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <h1>Resident Management</h1>
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <%= username.charAt(0).toUpperCase() %>
+                    </div>
+                    <span>Welcome, <%= username %> (<%= admin.role %>)</span>
+                    <button class="logout-btn" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                </div>
+            </header>
+
+            <!-- Search and Filter Bar -->
+            <div class="search-filter-bar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="search-residents" placeholder="Search residents...">
+                </div>
+                <div class="filter-dropdown">
+                    <select id="status-filter">
+                        <option value="all">All Statuses</option>
+                        <option value="online">Online</option>
+                        <option value="offline">Offline</option>
+                    </select>
+                </div>
+                <div class="filter-dropdown">
+                    <select id="unit-filter" aria-label="Filter by Purok">
+                        <option value="all">All Puroks</option>
+                        <option value="1">Purok 1</option>
+                        <option value="2">Purok 2</option>
+                        <option value="3">Purok 3</option>
+                        <option value="4">Purok 4</option>
+                        <option value="5">Purok 5</option>
+                        <option value="6">Purok 6</option>
+                        <option value="7">Purok 7</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <!-- Residents Table Section -->
+            <section class="content-section">
+                <div class="section-header">
+                    <h2>All Residents</h2>
+                    <div>
+                        <span id="resident-count">Showing 0 residents</span>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Purok</th>
+                                    <th>Phone</th>
+                                    <th>Status</th>
+                                    <th>Joined</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="residents-table-body">
+                                <!-- Residents will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+
+
+    <script src="/js/admin.js"></script>
+    <script>
+        document.getElementById('logout-btn').addEventListener('click', function() {
+            if (confirm('Are you sure you want to logout?')) {
+                fetch('/admin/logout', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = '/';
+                    }
+                })
+                .catch(error => {
+                    console.error('Logout error:', error);
+                    window.location.href = '/';
+                });
+            }
+        });
+
+        // Server data
+        const allUsers = JSON.parse('<%- JSON.stringify(residents || users || []).replace(/</g, "\\u003c") %>');
+        const residents = allUsers.filter(user => user.role === 'resident');
+
+        // DOM elements
+        const residentsTableBody = document.getElementById('residents-table-body');
+        const searchInput = document.getElementById('search-residents');
+        const statusFilter = document.getElementById('status-filter');
+        const unitFilter = document.getElementById('unit-filter');
+        const residentCount = document.getElementById('resident-count');
+        
+        // Consider users "Online" if they were active within this many minutes
+        const ONLINE_WINDOW_MINUTES = 10;
+        const ONLINE_WINDOW_MS = ONLINE_WINDOW_MINUTES * 60 * 1000;
+
+        // Initialize the page
+        async function refreshResidents() {
+            try {
+                const res = await fetch('/admin/api/residents', { method: 'GET' });
+                if (!res.ok) return; // keep silent on failures
+                const latest = await res.json();
+                // Update in-place by id to preserve references where possible
+                const byId = new Map(latest.map(r => [r._id, r]));
+                // Replace contents
+                residents.length = 0;
+                latest.forEach(r => residents.push(r));
+                filterResidents();
+            } catch (e) {
+                // ignore transient errors
+            }
+        }
+
+        function init() {
+            renderResidents(residents);
+            setupEventListeners();
+            filterResidents();
+            // Poll every 10 seconds for real-time status updates
+            setInterval(refreshResidents, 10000);
+            // SSE for instant updates (e.g., user logout -> offline)
+            try {
+                const es = new EventSource('/admin/events');
+                es.onmessage = (evt) => {
+                    try {
+                        const msg = JSON.parse(evt.data);
+                        if (msg && msg.type === 'userStatus' && msg.payload) {
+                            const { userId, isActive } = msg.payload;
+                            const r = residents.find(u => u._id === userId);
+                            if (r) {
+                                r.isActive = !!isActive;
+                                filterResidents();
+                            }
+                        }
+                    } catch (e) { /* ignore */ }
+                };
+            } catch (e) { /* ignore SSE failures */ }
+        }
+
+        // Render residents to the table
+        function renderResidents(residentsToRender) {
+            residentsTableBody.innerHTML = '';
+            
+            if (residentsToRender.length === 0) {
+                residentsTableBody.innerHTML = `
+                    <tr class="no-data-row">
+                        <td colspan="7">No residents found</td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            residentsToRender.forEach(resident => {
+                const row = document.createElement('tr');
+                const lastLoginTime = resident.lastLogin ? new Date(resident.lastLogin).getTime() : 0;
+                const isOnline = !!resident.isActive && lastLoginTime && (Date.now() - lastLoginTime <= ONLINE_WINDOW_MS);
+                row.innerHTML = `
+                    <td><strong>${resident.firstName} ${resident.lastName}</strong></td>
+                    <td>${resident.email}</td>
+                    <td>${resident.unitNumber}</td>
+                    <td>${resident.phone}</td>
+                    <td>
+                        <span class="status-badge ${isOnline ? 'status-online' : 'status-offline'}">
+                            ${isOnline ? 'Online' : 'Offline'}
+                        </span>
+                    </td>
+                    <td>${formatDate(resident.createdAt)}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn ${resident.isActive ? 'btn-danger' : 'btn-success'} btn-sm toggle-status-btn" data-id="${resident._id}">
+                                <i class="fas ${resident.isActive ? 'fa-user-slash' : 'fa-user-check'}"></i>
+                                ${resident.isActive ? 'Deactivate' : 'Activate'}
+                            </button>
+                        </div>
+                    </td>
+                `;
+                residentsTableBody.appendChild(row);
+            });
+            
+            // Update resident count
+            residentCount.textContent = 'Showing ' + residentsToRender.length + ' resident' + (residentsToRender.length !== 1 ? 's' : '');
+        }
+
+        // Format date for display
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString(undefined, options);
+        }
+
+        // Helper: normalize to Purok number (as string) when possible
+        function getPurokValue(unitNumber) {
+            if (!unitNumber) return '';
+            const s = String(unitNumber).trim();
+            // If it contains the word 'purok' + number
+            const purokMatch = s.match(/purok\s*(\d+)/i);
+            if (purokMatch) return purokMatch[1];
+            // If it contains the word 'unit' + number
+            const unitMatch = s.match(/unit\s*(\d+)/i);
+            if (unitMatch) return unitMatch[1];
+            // If it's a pure number string, return as-is
+            if (/^\d+$/.test(s)) return s;
+            return s; // fallback
+        }
+
+        // Filter residents based on search and filters
+        function filterResidents() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const statusValue = statusFilter.value;
+            const unitValue = unitFilter.value;
+            
+            const filteredResidents = residents.filter(resident => {
+                const fullName = `${resident.firstName} ${resident.lastName}`.toLowerCase();
+                const matchesSearch = fullName.includes(searchTerm) || 
+                                    resident.email.toLowerCase().includes(searchTerm) ||
+                                    resident.unitNumber.includes(searchTerm);
+                const lastLoginTime = resident.lastLogin ? new Date(resident.lastLogin).getTime() : 0;
+                const isOnline = !!resident.isActive && lastLoginTime && (Date.now() - lastLoginTime <= ONLINE_WINDOW_MS);
+                const matchesStatus = statusValue === 'all' || (statusValue === 'online' ? isOnline : !isOnline);
+                const matchesUnit = unitValue === 'all' || getPurokValue(resident.unitNumber) === unitValue;
+                
+                return matchesSearch && matchesStatus && matchesUnit;
+            });
+            
+            renderResidents(filteredResidents);
+        }
+
+
+
+        // Toggle resident status via backend
+        async function toggleResidentStatus(id) {
+            try {
+                const btn = document.querySelector(`.toggle-status-btn[data-id="${id}"]`);
+                if (btn) btn.classList.add('loading');
+                const res = await fetch(`/admin/users/${id}/toggle-status`, { method: 'POST' });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || 'Failed to update status');
+                const resident = residents.find(r => r._id === id);
+                if (resident) {
+                    resident.isActive = data.isActive;
+                }
+                filterResidents();
+            } catch (e) {
+                console.error(e);
+                alert('Failed to update user status.');
+            } finally {
+                const btn = document.querySelector(`.toggle-status-btn[data-id="${id}"]`);
+                if (btn) btn.classList.remove('loading');
+            }
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Search and filter events
+            searchInput.addEventListener('input', filterResidents);
+            statusFilter.addEventListener('change', filterResidents);
+            unitFilter.addEventListener('change', filterResidents);
+
+            // Table action events (using event delegation)
+            residentsTableBody.addEventListener('click', (e) => {
+                if (e.target.classList.contains('toggle-status-btn') || e.target.closest('.toggle-status-btn')) {
+                    const btn = e.target.classList.contains('toggle-status-btn') ? e.target : e.target.closest('.toggle-status-btn');
+                    const id = btn.getAttribute('data-id');
+                    if (confirm('Are you sure you want to change this resident\'s status?')) {
+                        toggleResidentStatus(id);
+                    }
+                }
+            });
+        }
+
+        // Initialize the page when DOM is loaded
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

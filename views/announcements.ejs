@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Announcements</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+        /* Reused admin-dashboard styles */
+        :root {
+            --primary-color: #4a5568;
+            --primary-dark: #2d3748;
+            --secondary-color: #718096;
+            --accent-color: #4299e1;
+            --success-color: #48bb78;
+            --warning-color: #ed8936;
+            --danger-color: #f56565;
+            --light-bg: #f7fafc;
+            --dark-bg: #2d3748;
+            --text-dark: #2d3748;
+            --text-light: #718096;
+            --white: #ffffff;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--light-bg); color: var(--text-dark); line-height: 1.6; }
+
+        .dashboard-container { display: flex; min-height: 100vh; }
+        .sidebar { width: 250px; background: linear-gradient(135deg, var(--primary-dark), var(--primary-color)); color: var(--white); padding: 1.5rem 0; box-shadow: var(--shadow-lg); z-index: 100; }
+        .sidebar-header { padding: 0 1.5rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 1rem; }
+        .sidebar-header h2 { display:flex; align-items:center; gap:0.75rem; font-size:1.25rem; }
+        .sidebar-header h2 i { color: var(--accent-color); }
+        .sidebar-menu { list-style: none; padding: 0; }
+        .sidebar-menu li { margin-bottom: 0.25rem; }
+        .sidebar-menu a { display:flex; align-items:center; gap:0.75rem; padding:0.875rem 1.5rem; color: rgba(255,255,255,0.8); text-decoration:none; transition: all 0.3s ease; border-left: 3px solid transparent; }
+        .sidebar-menu a:hover, .sidebar-menu a.active { background: rgba(255,255,255,0.1); color: var(--white); border-left-color: var(--accent-color); }
+
+        .main-content { flex: 1; padding: 1.5rem; overflow-y: auto; }
+        .header { display:flex; justify-content:space-between; align-items:center; background: var(--white); padding:1rem 1.5rem; border-radius:12px; box-shadow:var(--shadow); margin-bottom:1.5rem; }
+        .header h1 { color: var(--primary-dark); font-size:1.5rem; }
+        .user-info { display:flex; align-items:center; gap:1rem; }
+        .user-avatar { width:40px; height:40px; border-radius:50%; background:var(--primary-color); display:flex; align-items:center; justify-content:center; color:var(--white); font-weight:bold; }
+
+        .card { background: var(--white); padding: 1.25rem; border-radius: 12px; box-shadow: var(--shadow); margin-bottom:1rem; }
+        .announcement{border-left:4px solid var(--accent-color);padding:.75rem;margin-bottom:.75rem;border-radius:6px;background:#fff}
+        .btn{padding:.5rem .75rem;border-radius:6px;background:var(--accent-color);color:#fff;text-decoration:none}
+
+        @media (max-width: 768px) { .dashboard-container { flex-direction: column; } .sidebar { width:100%; } }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-home"></i> Barangay Center</h2>
+                <div style="font-size:.9rem; opacity:.9; margin-top:.5rem;">Resident Dashboard</div>
+            </div>
+
+            <ul class="sidebar-menu">
+                <li><a href="/users/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="/users/announcements" class="active"><i class="fas fa-bullhorn"></i> Announcements</a></li>
+                <li><a href="/users/schedule"><i class="fas fa-calendar-alt"></i> Schedule</a></li>
+                <li><a id="logout-btn" href="/users/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="header">
+                <h1>Community Announcements</h1>
+                <div class="user-info">
+                    <div class="user-avatar"><%= (user.name && user.name.length) ? user.name.charAt(0).toUpperCase() : 'U' %></div>
+                    <div style="text-align:right;">
+                        <div style="font-weight:700;"><%= user.name %></div>
+                        <div style="font-size:.9rem; color:var(--text-light);"><%= user.email %> | Unit <%= user.unitNumber %></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <% if (typeof announcements !== 'undefined' && announcements && announcements.length) { %>
+                    <% announcements.forEach(function(a){ %>
+                        <div class="announcement">
+                            <div style="display:flex;justify-content:space-between;align-items:center">
+                                <div>
+                                    <strong><%= a.title %></strong>
+                                    <div style="font-size:.85rem;color:var(--text-light)"><%= a.createdAt ? new Date(a.createdAt).toLocaleString() : '' %></div>
+                                </div>
+                                <div class="small" style="color:var(--text-light)"><%= a.type || 'Notice' %></div>
+                            </div>
+                            <p style="margin-top:.5rem"><%= a.content || a.body || '' %></p>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <p class="small">No announcements at this time.</p>
+                <% } %>
+            </div>
+
+            <!-- Request Announcement form removed per UX decision -->
+        </main>
+    </div>
+</body>
+</html>
