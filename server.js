@@ -50,16 +50,6 @@ app.use(attachLocals);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/barangay-malimba';
-
-mongoose.connect(MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => {})
-.catch(err => console.log('MongoDB connection error:', err));
-
 // User Schema
 const userSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
@@ -88,28 +78,6 @@ const adminSchema = new mongoose.Schema({
 // Check if models already exist to prevent OverwriteModelError
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 const Admin = mongoose.models.Admin || mongoose.model('Admin', adminSchema);
-
-// Create initial admin account if none exists
-async function createInitialAdmin() {
-  try {
-    const adminCount = await Admin.countDocuments();
-    
-    if (adminCount === 0) {
-      const hashedPassword = await bcrypt.hash('admin123', 10);
-      
-      const admin = new Admin({
-        username: 'admin',
-        password: hashedPassword,
-        email: 'admin@communityportal.com',
-        role: 'admin'
-      });
-      
-      await admin.save();
-    }
-  } catch (error) {
-    console.error('Error creating initial admin:', error);
-  }
-}
 
 // Authentication middleware moved to ./middleware/mw
 
@@ -476,12 +444,9 @@ app.use(notFoundHandler);
 
 // Start server with EADDRINUSE fallback
 function startServer(port, attempts = 0) {
-  const server = app.listen(port, async () => {
+  const server = app.listen(port, () => {
     console.log(`Server running on port ${port}`);
     console.log(`Visit: http://localhost:${port}`);
-
-    // Create initial admin account
-    await createInitialAdmin();
   });
 
   server.on('error', (err) => {
