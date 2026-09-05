@@ -8,6 +8,7 @@ const ScheduleRequest = require('../models/scheduleRequest');
 const Appointment = require('../models/appointment');
 // reCAPTCHA config (provides site key for client widget)
 const recaptchaConfig = require('../config/recaptcha');
+const { verifyRecaptcha } = require('../utils/recaptcha');
 
 // Homepage route
 router.get('/', async (req, res) => {
@@ -125,6 +126,14 @@ router.get('/users/login', (req, res) => {
 // User Registration POST route
 router.post('/users/register', async (req, res) => {
   try {
+    const isRecaptchaValid = await verifyRecaptcha(req.body.recaptchaToken, req.ip);
+    if (!isRecaptchaValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'reCAPTCHA verification failed. Please try again.'
+      });
+    }
+
     const settings = require('../utils/settings');
     if (settings.get('allowUserRegistration', true) === false) {
       return res.json({
@@ -246,6 +255,14 @@ router.post('/users/register', async (req, res) => {
 // User Login POST route
 router.post('/users/login', async (req, res) => {
   try {
+    const isRecaptchaValid = await verifyRecaptcha(req.body.recaptchaToken, req.ip);
+    if (!isRecaptchaValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'reCAPTCHA verification failed. Please try again.'
+      });
+    }
+
     const { email, password } = req.body;
 
     // Find user and include password

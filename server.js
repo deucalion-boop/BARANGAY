@@ -4,30 +4,12 @@ const mongoose = require('mongoose');
 const { sessionMiddleware, requireAuth, requireAdminAuth, attachLocals, errorHandler, notFoundHandler } = require('./middleware/mw');
 const bcrypt = require('bcryptjs');
 const path = require('path');
-const axios = require('axios');
 require('dotenv').config();
+const { createSupabaseAuthClient } = require('./config/supabase');
+const { verifyRecaptcha } = require('./utils/recaptcha');
 
 // Import email service
 const { sendOTPEmail, verifyOTP, generateOTP, sendWelcomeEmail, sendNotificationEmail } = require('./utils/emailService');
-
-// Import reCAPTCHA config
-const recaptchaConfig = require('./config/recaptcha');
-
-// Helper function to verify reCAPTCHA
-async function verifyRecaptcha(token) {
-  try {
-    const response = await axios.post(recaptchaConfig.verifyUrl, null, {
-      params: {
-        secret: recaptchaConfig.secretKey,
-        response: token
-      }
-    });
-    return response.data.success;
-  } catch (error) {
-    console.error('reCAPTCHA verification error:', error);
-    return false;
-  }
-}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -66,18 +48,8 @@ const userSchema = new mongoose.Schema({
   lastLogin: { type: Date }
 });
 
-// Admin Schema
-const adminSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  email: { type: String, required: true },
-  role: { type: String, default: 'admin' },
-  createdAt: { type: Date, default: Date.now }
-});
-
 // Check if models already exist to prevent OverwriteModelError
 const User = mongoose.models.User || mongoose.model('User', userSchema);
-const Admin = mongoose.models.Admin || mongoose.model('Admin', adminSchema);
 
 // Authentication middleware moved to ./middleware/mw
 
@@ -85,14 +57,6 @@ const Admin = mongoose.models.Admin || mongoose.model('Admin', adminSchema);
 app.use('/', require('./routes/index'));
 app.use('/admin', require('./routes/admin'));
 app.use('/users', require('./routes/user'));
-
-// Start inventory monitor
-const inventoryMonitor = require('./jobs/inventoryMonitor');
-inventoryMonitor.start();
-
-// Start schedule expiry manager
-const scheduleExpiry = require('./jobs/scheduleExpiry');
-scheduleExpiry.initializeScheduleExpiry();
 
 // Home route handled in routes/index.js (SSR with latest announcements)
 
@@ -275,7 +239,7 @@ app.post('/admin/login', async (req, res) => {
       });
     }
 
-    const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
+    const isRecaptchaValid = await verifyRecaptcha(recaptchaToken, req.ip);
     if (!isRecaptchaValid) {
       return res.json({
         success: false,
@@ -283,20 +247,27 @@ app.post('/admin/login', async (req, res) => {
       });
     }
     
-    // Find admin by username
-    const admin = await Admin.findOne({ username });
-    
-    if (!admin) {
+    const configuredUsername = process.env.SUPABASE_ADMIN_USERNAME?.trim().toLowerCase();
+    const configuredEmail = process.env.SUPABASE_ADMIN_EMAIL?.trim().toLowerCase();
+    const loginName = username?.trim().toLowerCase();
+
+    if (!loginName || !configuredEmail ||
+        (loginName !== configuredUsername && loginName !== configuredEmail)) {
       return res.json({ 
         success: false, 
         message: 'Invalid username or password' 
       });
     }
-    
-    // Check password
-    const isMatch = await bcrypt.compare(password, admin.password);
-    
-    if (!isMatch) {
+
+    const supabase = createSupabaseAuthClient();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: configuredEmail,
+      password,
+    });
+
+    const admin = data?.user;
+    const role = admin?.app_metadata?.role || admin?.user_metadata?.role;
+    if (error || !admin || role !== 'admin') {
       return res.json({ 
         success: false, 
         message: 'Invalid username or password' 
@@ -304,14 +275,14 @@ app.post('/admin/login', async (req, res) => {
     }
     
     // Create session
-    req.session.adminId = admin._id;
-    req.session.username = admin.username;
-    req.session.role = admin.role;
+    req.session.adminId = admin.id;
+    req.session.username = admin.user_metadata?.username || configuredUsername;
+    req.session.role = role;
     req.session.admin = {
-      id: admin._id,
-      username: admin.username,
+      id: admin.id,
+      username: req.session.username,
       email: admin.email,
-      role: admin.role
+      role
     };
     
     res.json({ 
@@ -319,8 +290,8 @@ app.post('/admin/login', async (req, res) => {
       message: 'Login successful',
       redirectUrl: '/admin/dashboard',
       user: {
-        username: admin.username,
-        role: admin.role
+        username: req.session.username,
+        role
       }
     });
     
@@ -358,7 +329,6 @@ app.get('/user/dashboard', requireAuth, async (req, res) => {
 // Admin Dashboard Route (protected)
 app.get('/admin/dashboard', requireAdminAuth, async (req, res) => {
   try {
-    const admin = await Admin.findById(req.session.adminId);
     const users = await User.find({}, { password: 0 }).sort({ createdAt: -1 });
     const totalUsers = await User.countDocuments();
     const activeUsers = await User.countDocuments({ isActive: true });
@@ -366,7 +336,7 @@ app.get('/admin/dashboard', requireAdminAuth, async (req, res) => {
     res.render('admin-dashboard', {
       title: 'Admin Dashboard',
       username: req.session.username,
-      admin: admin,
+      admin: req.session.admin,
       users: users,
       totalUsers: totalUsers,
       activeUsers: activeUsers,

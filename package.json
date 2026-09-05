@@ -5,9 +5,11 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "supabase:create-admin": "node scripts/create-supabase-admin.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.115.0",
     "append-field": "^2.0.0",
     "asynckit": "^0.4.0",
     "axios": "^1.13.1",

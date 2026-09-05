@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const Appointment = require('../models/appointment');
 const Announcement = require('../models/announcements');
@@ -76,6 +77,24 @@ router.get('/login', (req, res) => {
 // Admin dashboard (protected)
 router.get('/dashboard', requireAdminAuth, async (req, res) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.render('admin-dashboard', {
+        title: 'Admin Dashboard',
+        username: req.session.username,
+        admin: req.session.admin,
+        users: [],
+        totalUsers: 0,
+        activeUsers: 0,
+        pendingResidentRequests: 0,
+        activeAnnouncements: 0,
+        scheduleStats: {
+          totalAppointments: 0,
+          todayAppointments: 0,
+          pendingAppointments: 0,
+        },
+      });
+    }
+
     const totalUsers = await User.countDocuments();
     const activeUsers = await User.countDocuments({ isActive: true });
     const users = await User.find({}, { password: 0 })
