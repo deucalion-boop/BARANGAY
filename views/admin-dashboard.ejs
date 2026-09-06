@@ -316,9 +316,9 @@
                 <h1>Admin Dashboard</h1>
                 <div class="user-info">
                     <div class="user-avatar">
-                        <%= username.charAt(0).toUpperCase() %>
+                        <%= String(username || 'A').charAt(0).toUpperCase() %>
                     </div>
-                    <span>Welcome, <%= username %> (<%= admin.role %>)</span>
+                    <span>Welcome, <%= username || 'Admin' %> (<%= admin && admin.role ? admin.role : 'admin' %>)</span>
                     <button class="logout-btn" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
                 </div>
             </header>
@@ -401,7 +401,7 @@
                                                 <%= isOnline ? 'Online' : 'Offline' %>
                                             </span>
                                         </td>
-                                        <td><%= user.createdAt.toLocaleDateString() %></td>
+                                        <td><%= user.createdAt && !Number.isNaN(new Date(user.createdAt).getTime()) ? new Date(user.createdAt).toLocaleDateString() : '-' %></td>
                                         <td>
                                             <div class="action-buttons">
                                                 <button class="btn btn-primary btn-sm" onclick="viewUser('<%= user._id %>')">
