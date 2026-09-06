@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const bcrypt = require('bcryptjs');
 const ResidentRequest = require('../models/residentRequest');
 const Announcement = require('../models/announcements');
 const ScheduleRequest = require('../models/scheduleRequest');
@@ -9,6 +8,7 @@ const Appointment = require('../models/appointment');
 // reCAPTCHA config (provides site key for client widget)
 const recaptchaConfig = require('../config/recaptcha');
 const { verifyRecaptcha } = require('../utils/recaptcha');
+const { createSupabaseAuthClient, createSupabaseAdminClient } = require('../config/supabase');
 
 // Homepage route
 router.get('/', async (req, res) => {
@@ -188,21 +188,44 @@ router.post('/users/register', async (req, res) => {
       }
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Create the credential in Supabase Auth. The SQL trigger creates its profile.
+    const supabaseAdmin = createSupabaseAdminClient();
+    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedUnit = unitNumber.toUpperCase().trim();
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: normalizedEmail,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        phone: phone.trim(),
+        unitNumber: normalizedUnit,
+        role: 'resident',
+        isActive: false,
+      },
+      app_metadata: { role: 'resident' },
+    });
+    if (authError) throw authError;
 
-    // Create new user in inactive state (awaiting admin approval)
     const newUser = new User({
+      id: authData.user.id,
       firstName: firstName.trim(),
       lastName: lastName.trim(),
-      email: email.toLowerCase().trim(),
+      email: normalizedEmail,
       phone: phone.trim(),
-      unitNumber: unitNumber.toUpperCase().trim(),
-      password: hashedPassword,
-      isActive: false
+      unitNumber: normalizedUnit,
+      role: 'resident',
+      isActive: false,
+      emailVerified: true,
     });
 
-    await newUser.save();
+    try {
+      await newUser.save();
+    } catch (profileError) {
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+      throw profileError;
+    }
 
     // Create a pending ResidentRequest for admin review
     try {
@@ -265,30 +288,28 @@ router.post('/users/login', async (req, res) => {
 
     const { email, password } = req.body;
 
-    // Find user and include password
-    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
-    
-    if (!user) {
+    const normalizedEmail = email.toLowerCase().trim();
+    const supabase = createSupabaseAuthClient();
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email: normalizedEmail,
+      password,
+    });
+
+    if (authError || !authData.user) {
       return res.json({
         success: false,
         message: 'Invalid email or password'
       });
     }
+
+    const user = await User.findById(authData.user.id);
+    if (!user) return res.json({ success: false, message: 'Resident profile was not found' });
 
     // Check if user is active (pending admin approval if inactive)
     if (!user.isActive) {
       return res.json({
         success: false,
         message: 'Your account is pending approval by an admin. Please wait for approval.'
-      });
-    }
-
-    // Check password
-    const isPasswordCorrect = await bcrypt.compare(password, user.password);
-    if (!isPasswordCorrect) {
-      return res.json({
-        success: false,
-        message: 'Invalid email or password'
       });
     }
 

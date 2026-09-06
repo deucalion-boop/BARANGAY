@@ -1,4 +1,3 @@
-const mongoose = require('mongoose');
 const Inventory = require('../models/inventory');
 const { broadcast } = require('../utils/realtime');
 

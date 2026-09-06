@@ -1,11 +1,10 @@
 const express = require('express');
-const mongoose = require('mongoose');
 // Session and auth middleware
 const { sessionMiddleware, requireAuth, requireAdminAuth, attachLocals, errorHandler, notFoundHandler } = require('./middleware/mw');
-const bcrypt = require('bcryptjs');
 const path = require('path');
 require('dotenv').config();
-const { createSupabaseAuthClient } = require('./config/supabase');
+const { createSupabaseAuthClient, createSupabaseAdminClient } = require('./config/supabase');
+const User = require('./models/User');
 const { verifyRecaptcha } = require('./utils/recaptcha');
 
 // Import email service
@@ -32,31 +31,29 @@ app.use(attachLocals);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// User Schema
-const userSchema = new mongoose.Schema({
-  firstName: { type: String, required: true },
-  lastName: { type: String, required: true },
-  email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-  phone: { type: String, required: true },
-  unitNumber: { type: String, required: true },
-  address: { type: String, default: '' },
-  avatarUrl: { type: String, default: '' },
-  password: { type: String, required: true },
-  role: { type: String, default: 'resident' },
-  isActive: { type: Boolean, default: true },
-  createdAt: { type: Date, default: Date.now },
-  lastLogin: { type: Date }
-});
-
-// Check if models already exist to prevent OverwriteModelError
-const User = mongoose.models.User || mongoose.model('User', userSchema);
-
 // Authentication middleware moved to ./middleware/mw
 
 // Routes
 app.use('/', require('./routes/index'));
 app.use('/admin', require('./routes/admin'));
 app.use('/users', require('./routes/user'));
+
+// Supabase-backed maintenance jobs
+const inventoryMonitor = require('./jobs/inventoryMonitor');
+const scheduleExpiry = require('./jobs/scheduleExpiry');
+const runAnnouncementScheduler = require('./jobs/announcementScheduler');
+let backgroundJobsStarted = false;
+
+function startBackgroundJobs() {
+  if (backgroundJobsStarted) return;
+  backgroundJobsStarted = true;
+  inventoryMonitor.start();
+  scheduleExpiry.initializeScheduleExpiry();
+  runAnnouncementScheduler().catch((error) => console.error('Announcement scheduler error:', error.message));
+  setInterval(() => {
+    runAnnouncementScheduler().catch((error) => console.error('Announcement scheduler error:', error.message));
+  }, 60 * 1000);
+}
 
 // Home route handled in routes/index.js (SSR with latest announcements)
 
@@ -110,20 +107,38 @@ app.post('/user/register', async (req, res) => {
       }
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const supabaseAdmin = createSupabaseAdminClient();
+    const normalizedEmail = email.toLowerCase().trim();
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: normalizedEmail,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        firstName: firstName.trim(), lastName: lastName.trim(), phone: phone.trim(),
+        unitNumber: unitNumber.trim(), role: 'resident', isActive: false,
+      },
+      app_metadata: { role: 'resident' },
+    });
+    if (authError) throw authError;
 
-    // Create new user
     const user = new User({
+      id: authData.user.id,
       firstName: firstName.trim(),
       lastName: lastName.trim(),
-      email: email.toLowerCase().trim(),
+      email: normalizedEmail,
       phone: phone.trim(),
       unitNumber: unitNumber.trim(),
-      password: hashedPassword
+      role: 'resident',
+      isActive: false,
+      emailVerified: true,
     });
 
-    await user.save();
+    try {
+      await user.save();
+    } catch (profileError) {
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+      throw profileError;
+    }
 
     // Send welcome email
     try {
@@ -161,30 +176,26 @@ app.post('/user/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user by email
-    const user = await User.findOne({ email: email.toLowerCase() });
-    
-    if (!user) {
+    const supabase = createSupabaseAuthClient();
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email: email.toLowerCase().trim(),
+      password,
+    });
+
+    if (authError || !authData.user) {
       return res.json({ 
         success: false, 
         message: 'Invalid email or password' 
       });
     }
+
+    const user = await User.findById(authData.user.id);
+    if (!user) return res.json({ success: false, message: 'Resident profile was not found' });
 
     if (!user.isActive) {
       return res.json({ 
         success: false, 
         message: 'Account is deactivated. Please contact administration.' 
-      });
-    }
-
-    // Check password
-    const isMatch = await bcrypt.compare(password, user.password);
-    
-    if (!isMatch) {
-      return res.json({ 
-        success: false, 
-        message: 'Invalid email or password' 
       });
     }
 
@@ -417,6 +428,7 @@ function startServer(port, attempts = 0) {
   const server = app.listen(port, () => {
     console.log(`Server running on port ${port}`);
     console.log(`Visit: http://localhost:${port}`);
+    startBackgroundJobs();
   });
 
   server.on('error', (err) => {
@@ -431,4 +443,4 @@ function startServer(port, attempts = 0) {
   });
 }
 
-startServer(Number(PORT));
+require('./utils/settings').load().finally(() => startServer(Number(PORT)));

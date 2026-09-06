@@ -1,13 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const path = require('path');
-const fs = require('fs');
 const multer = require('multer');
 const { addClient, removeClient, broadcast } = require('../utils/realtime');
 const Notification = require('../models/notification');
 const { sendOTPEmail, verifyOTP, generateOTP } = require('../utils/emailService');
-const bcrypt = require('bcryptjs');
+const { createSupabaseAuthClient, createSupabaseAdminClient } = require('../config/supabase');
+const { uploadPortalFile, removePortalFile } = require('../utils/supabaseStorage');
 
 // User registration
 router.post('/register', async (req, res) => {
@@ -23,18 +22,34 @@ router.post('/register', async (req, res) => {
             });
         }
 
-        // Create new user (inactive until approved by admin)
+        const supabaseAdmin = createSupabaseAdminClient();
+        const normalizedEmail = email.trim().toLowerCase();
+        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+            email: normalizedEmail,
+            password,
+            email_confirm: true,
+            user_metadata: { firstName, lastName, phone, unitNumber, role: 'resident', isActive: false },
+            app_metadata: { role: 'resident' }
+        });
+        if (authError) throw authError;
+
         const newUser = new User({
+            id: authData.user.id,
             firstName,
             lastName,
-            email,
+            email: normalizedEmail,
             phone,
             unitNumber,
-            password,
-            isActive: false
+            role: 'resident',
+            isActive: false,
+            emailVerified: true
         });
-
-        await newUser.save();
+        try {
+            await newUser.save();
+        } catch (profileError) {
+            await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+            throw profileError;
+        }
 
         res.json({
             success: true,
@@ -54,30 +69,23 @@ router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Find user and include password
-        const user = await User.findOne({ email }).select('+password');
-
-        if (!user) {
+        const supabase = createSupabaseAuthClient();
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+        if (authError || !authData.user) {
             return res.status(401).json({
                 success: false,
                 message: 'Invalid email or password'
             });
         }
+
+        const user = await User.findById(authData.user.id);
+        if (!user) return res.status(404).json({ success: false, message: 'Resident profile was not found' });
 
         // Check if user is active (approved by admin)
         if (!user.isActive) {
             return res.status(403).json({
                 success: false,
                 message: 'Your account is pending approval by an administrator. Please wait for approval before logging in.'
-            });
-        }
-
-        // Check password
-        const isPasswordCorrect = await user.correctPassword(password, user.password);
-        if (!isPasswordCorrect) {
-            return res.status(401).json({
-                success: false,
-                message: 'Invalid email or password'
             });
         }
 
@@ -222,11 +230,9 @@ router.get('/logout', async (req, res) => {
                 const user = await User.findById(userId);
                 if (user) {
                     user.lastLogout = new Date();
-                    // Optionally mark inactive if you want 'Online' to strictly reflect current sessions
-                    user.isActive = false;
                     await user.save();
                     // Broadcast offline event
-                    broadcast('userStatus', { userId: String(user._id), isActive: false, lastLogin: user.lastLogin || null });
+                    broadcast('userStatus', { userId: String(user._id), isOnline: false, lastLogin: user.lastLogin || null });
                 }
             } catch (e) {
                 // ignore broadcast errors
@@ -346,10 +352,9 @@ router.post('/reset-password', async (req, res) => {
             });
         }
 
-        // Hash new password
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
-        user.password = hashedPassword;
-        await user.save();
+        const supabaseAdmin = createSupabaseAdminClient();
+        const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(user.id, { password: newPassword });
+        if (updateError) throw updateError;
 
         res.json({
             success: true,
@@ -442,15 +447,16 @@ router.post('/settings/password', async (req, res) => {
         if (!currentPassword || !newPassword) return res.json({ success: false, message: 'Missing fields' });
         if (newPassword.length < 6) return res.json({ success: false, message: 'New password must be at least 6 characters' });
 
-        const user = await User.findById(req.session.userId).select('+password');
+        const user = await User.findById(req.session.userId);
         if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-        const isMatch = await bcrypt.compare(currentPassword, user.password);
-        if (!isMatch) return res.json({ success: false, message: 'Current password is incorrect' });
+        const supabase = createSupabaseAuthClient();
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email: user.email, password: currentPassword });
+        if (signInError) return res.json({ success: false, message: 'Current password is incorrect' });
 
-    const hashed = await bcrypt.hash(newPassword, 10);
-    user.password = hashed;
-    await user.save();
+        const supabaseAdmin = createSupabaseAdminClient();
+        const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(user.id, { password: newPassword });
+        if (updateError) throw updateError;
         res.json({ success: true, message: 'Password updated successfully' });
     } catch (error) {
         console.error('Change password error:', error);
@@ -458,20 +464,8 @@ router.post('/settings/password', async (req, res) => {
     }
 });
 
-// Multer setup for avatar uploads
-const avatarsDir = path.join(__dirname, '..', 'public', 'uploads', 'avatars');
-if (!fs.existsSync(avatarsDir)) {
-    fs.mkdirSync(avatarsDir, { recursive: true });
-}
-const storage = multer.diskStorage({
-    destination: function(req, file, cb) { cb(null, avatarsDir); },
-    filename: function(req, file, cb) {
-        const ext = path.extname(file.originalname);
-        cb(null, `${req.session.userId}-${Date.now()}${ext}`);
-    }
-});
 const upload = multer({
-    storage,
+    storage: multer.memoryStorage(),
     limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
     fileFilter: function(req, file, cb) {
         const allowed = ['image/jpeg', 'image/png', 'image/gif'];
@@ -487,14 +481,15 @@ router.post('/settings/photo', upload.single('photo'), async (req, res) => {
     try {
         if (!req.session.userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
         if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
-        const relPath = `/uploads/avatars/${req.file.filename}`;
         const user = await User.findById(req.session.userId);
         if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-        user.avatarUrl = relPath;
+        if (user.avatarUrl) await removePortalFile(user.avatarUrl);
+        const avatarUrl = await uploadPortalFile('avatars', req.session.userId, req.file);
+        user.avatarUrl = avatarUrl;
         await user.save();
         // keep session avatar in sync so views rendered from session can show it immediately
-        try { req.session.avatarUrl = relPath; } catch (e) {}
-        res.json({ success: true, message: 'Photo updated', avatarUrl: relPath });
+        try { req.session.avatarUrl = avatarUrl; } catch (e) {}
+        res.json({ success: true, message: 'Photo updated', avatarUrl });
     } catch (error) {
         console.error('Photo upload error:', error);
         res.status(500).json({ success: false, message: error.message || 'Failed to upload photo' });
@@ -508,7 +503,9 @@ router.post('/settings/delete-account', async (req, res) => {
         const { confirm } = req.body;
         if (confirm !== 'DELETE') return res.json({ success: false, message: 'Confirmation text mismatch' });
 
-        await User.deleteOne({ _id: req.session.userId });
+        const supabaseAdmin = createSupabaseAdminClient();
+        const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(req.session.userId);
+        if (deleteError) throw deleteError;
         req.session.destroy(() => {});
         res.json({ success: true, message: 'Account deleted' });
     } catch (error) {

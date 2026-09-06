@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const mongoose = require('mongoose');
+const crypto = require('crypto');
 const User = require('../models/User');
 const Appointment = require('../models/appointment');
 const Announcement = require('../models/announcements');
@@ -11,23 +11,9 @@ const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 const { addClient, removeClient, broadcast } = require('../utils/realtime');
+const { uploadPortalFile, removePortalFile } = require('../utils/supabaseStorage');
+const { createSupabaseAdminClient } = require('../config/supabase');
 const LOG_FILE = path.join(__dirname, '../text.log');
-
-// Image upload setup for announcements
-const uploadsRoot = path.join(__dirname, '../public/uploads/announcements');
-// Ensure uploads directory exists
-try { fs.mkdirSync(uploadsRoot, { recursive: true }); } catch (e) {}
-
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadsRoot);
-  },
-  filename: function (req, file, cb) {
-    const ext = path.extname(file.originalname) || '.png';
-    const base = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9-_]/g, '').slice(0, 50) || 'image';
-    cb(null, `${Date.now()}-${base}${ext}`);
-  }
-});
 
 function imageFileFilter(req, file, cb) {
   const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -35,25 +21,7 @@ function imageFileFilter(req, file, cb) {
   cb(new Error('Only image files are allowed'));
 }
 
-const upload = multer({ storage, fileFilter: imageFileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
-
-function toPublicUrl(filePath) {
-  // Convert absolute path under public to URL path
-  const publicDir = path.join(__dirname, '../public');
-  const rel = path.relative(publicDir, filePath).replace(/\\/g, '/');
-  return `/${rel}`;
-}
-
-function removeAnnouncementImage(imageUrl) {
-  if (!imageUrl) return;
-  try {
-    const publicDir = path.join(__dirname, '../public');
-    const abs = path.join(publicDir, imageUrl.replace(/^\//, ''));
-    fs.unlink(abs, () => {});
-  } catch (e) {
-    // ignore
-  }
-}
+const upload = multer({ storage: multer.memoryStorage(), fileFilter: imageFileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
 
 // Admin authentication middleware
 const requireAdminAuth = (req, res, next) => {
@@ -77,24 +45,6 @@ router.get('/login', (req, res) => {
 // Admin dashboard (protected)
 router.get('/dashboard', requireAdminAuth, async (req, res) => {
   try {
-    if (mongoose.connection.readyState !== 1) {
-      return res.render('admin-dashboard', {
-        title: 'Admin Dashboard',
-        username: req.session.username,
-        admin: req.session.admin,
-        users: [],
-        totalUsers: 0,
-        activeUsers: 0,
-        pendingResidentRequests: 0,
-        activeAnnouncements: 0,
-        scheduleStats: {
-          totalAppointments: 0,
-          todayAppointments: 0,
-          pendingAppointments: 0,
-        },
-      });
-    }
-
     const totalUsers = await User.countDocuments();
     const activeUsers = await User.countDocuments({ isActive: true });
     const users = await User.find({}, { password: 0 })
@@ -1286,13 +1236,26 @@ router.post('/api/appointments', requireAdminAuth, async (req, res) => {
     let patient = await User.findOne({ email: patientEmail });
     if (!patient) {
       const nameParts = patientName.split(' ');
+      const temporaryPassword = `Temp-${crypto.randomBytes(18).toString('base64url')}`;
+      const supabaseAdmin = createSupabaseAdminClient();
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email: patientEmail.trim().toLowerCase(),
+        password: temporaryPassword,
+        email_confirm: true,
+        user_metadata: {
+          firstName: nameParts[0], lastName: nameParts.slice(1).join(' ') || 'Unknown',
+          phone: patientPhone, unitNumber: unitNumber || null, role: 'resident', isActive: true,
+        },
+        app_metadata: { role: 'resident' },
+      });
+      if (authError) throw authError;
       patient = new User({
+        id: authData.user.id,
         firstName: nameParts[0],
         lastName: nameParts.slice(1).join(' ') || 'Unknown',
         email: patientEmail,
         phone: patientPhone,
         unitNumber: unitNumber || 'N/A',
-        password: 'temporary123', // Will need to reset
         role: 'resident',
         isActive: true
       });
@@ -1664,6 +1627,7 @@ router.post('/api/announcements', requireAdminAuth, upload.single('image'), asyn
     if (schedule && schedule > new Date()) {
       activeFlag = false; // Scheduled for future, not active yet
     }
+    const imageUrl = req.file ? await uploadPortalFile('announcements', req.session.adminId, req.file) : null;
     const announcement = new Announcement({
       title,
       content,
@@ -1673,7 +1637,7 @@ router.post('/api/announcements', requireAdminAuth, upload.single('image'), asyn
       isActive: activeFlag,
       createdBy: req.session.adminId,
       scheduleDate: schedule,
-      imageUrl: req.file ? toPublicUrl(req.file.path) : null
+      imageUrl
     });
 
   await announcement.save();
@@ -1773,12 +1737,12 @@ router.put('/api/announcements/:id', requireAdminAuth, upload.single('image'), a
     if (req.file) {
       // Replace existing image
       if (announcement.imageUrl) {
-        removeAnnouncementImage(announcement.imageUrl);
+        await removePortalFile(announcement.imageUrl);
       }
-      announcement.imageUrl = toPublicUrl(req.file.path);
+      announcement.imageUrl = await uploadPortalFile('announcements', req.session.adminId, req.file);
     } else if (removeImage === 'true' || removeImage === true || removeImage === '1') {
       if (announcement.imageUrl) {
-        removeAnnouncementImage(announcement.imageUrl);
+        await removePortalFile(announcement.imageUrl);
       }
       announcement.imageUrl = null;
     }
@@ -1828,7 +1792,7 @@ router.delete('/api/announcements/:id', requireAdminAuth, async (req, res) => {
     }
     // Remove image from disk if present
     if (announcement.imageUrl) {
-      removeAnnouncementImage(announcement.imageUrl);
+      await removePortalFile(announcement.imageUrl);
     }
     await Announcement.findByIdAndDelete(req.params.id);
     try { broadcast('announcement_updated', { action: 'deleted', id: String(announcement._id) }); } catch (e) {}
@@ -1957,13 +1921,30 @@ router.post('/requests/residents/:id/approve', requireAdminAuth, async (req, res
     // Create user if not exists; otherwise activate existing user
     let user = await User.findOne({ email: reqDoc.email });
     if (!user) {
+      let authUserId = reqDoc.createdBy?.id || reqDoc.createdBy?._id || reqDoc.createdBy;
+      if (!authUserId) {
+        const temporaryPassword = `Temp-${crypto.randomBytes(18).toString('base64url')}`;
+        const supabaseAdmin = createSupabaseAdminClient();
+        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+          email: reqDoc.email.trim().toLowerCase(),
+          password: temporaryPassword,
+          email_confirm: true,
+          user_metadata: {
+            firstName: reqDoc.firstName, lastName: reqDoc.lastName || '', phone: reqDoc.phone || '',
+            unitNumber: reqDoc.unitNumber || null, role: 'resident', isActive: true,
+          },
+          app_metadata: { role: 'resident' },
+        });
+        if (authError) throw authError;
+        authUserId = authData.user.id;
+      }
       user = new User({
+        id: authUserId,
         firstName: reqDoc.firstName,
         lastName: reqDoc.lastName || '',
         email: reqDoc.email,
         phone: reqDoc.phone || '',
         unitNumber: reqDoc.unitNumber || '',
-        password: 'temporary123',
         role: 'resident',
         isActive: true,
         createdAt: new Date()
@@ -2503,7 +2484,7 @@ router.get('/api/inventory', requireAdminAuth, async (req, res) => {
 });
 
 // Get single inventory item
-router.get('/api/inventory/:id([0-9a-fA-F]{24})', requireAdminAuth, async (req, res) => {
+router.get('/api/inventory/:id([0-9a-fA-F-]{36})', requireAdminAuth, async (req, res) => {
   try {
     const item = await Inventory.findById(req.params.id)
       .populate('createdBy', 'firstName lastName');

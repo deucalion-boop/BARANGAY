@@ -1,36 +1,61 @@
 # Supabase setup
 
-The application now uses Supabase Auth for the administrator identity. The
-remaining resident, appointment, inventory, announcement, and request models
-still use Mongoose and must be migrated to Supabase Postgres separately.
+The application uses Supabase for authentication, Postgres data, and uploaded
+images. MongoDB and Mongoose are no longer runtime dependencies.
 
-## Create or update the administrator
+## 1. Create the database
 
-1. Put your project URL and keys in `.env`.
-2. Replace `SUPABASE_ADMIN_EMAIL`, `SUPABASE_ADMIN_USERNAME`, and
-   `SUPABASE_ADMIN_PASSWORD` with the credentials you want.
-3. Run:
+1. Open the Supabase project.
+2. Go to **SQL Editor** and create a new query.
+3. Copy all of `supabase/schema.sql` into the editor.
+4. Select **Run**.
 
-   ```powershell
-   npm run supabase:create-admin
-   ```
+Then verify the installation:
 
-The command creates the user in **Supabase Dashboard > Authentication > Users**,
-confirms the email, and stores `role: admin` in both app and user metadata. If
-the email already exists, it updates that user instead.
+```powershell
+npm run supabase:check
+```
 
-Start the application with `npm start`. The existing admin login form accepts
-either the configured username or email and authenticates the password through
-Supabase Auth.
+The script creates the profile, appointment, scheduling, announcement,
+inventory, notification, and settings tables. It also creates indexes, the Auth
+profile trigger, Row Level Security policies, and the `portal-media` Storage
+bucket.
 
-## Suggested prompts for the remaining migration
+The script is idempotent and can be run again when no incompatible manual schema
+changes have been made.
 
-Migrate one feature at a time so each schema and route can be verified.
+## 2. Synchronize the administrator
 
-1. `Create Supabase SQL migrations with RLS policies for resident profiles, then replace the Mongoose User model and resident registration/login routes with Supabase Auth and Postgres.`
-2. `Migrate appointments, appointment types, and schedule requests from Mongoose to Supabase Postgres, preserving current API responses and admin screens.`
-3. `Migrate announcements and announcement requests to Supabase Postgres and move announcement images to Supabase Storage with admin-only write policies.`
-4. `Migrate inventory and notifications to Supabase, add appropriate indexes and RLS policies, and remove the remaining MongoDB/Mongoose dependencies and files.`
+Set the desired administrator credentials in `.env`, then run:
 
-After each phase, test registration, login, authorization, CRUD operations, and
-RLS using both an admin and resident account before removing MongoDB code.
+```powershell
+npm run supabase:create-admin
+```
+
+This creates or updates the Supabase Auth user and stores `role: admin` in its
+trusted app metadata. The database SQL backfills a matching `profiles` record.
+
+## 3. Start and verify
+
+```powershell
+npm install
+npm start
+```
+
+Verify these workflows:
+
+1. Admin login and dashboard statistics.
+2. Resident registration, pending approval, approval, and login.
+3. Schedule request approval and appointment management.
+4. Announcement CRUD and image upload.
+5. Inventory CRUD and status changes.
+6. Resident notifications, settings, avatar upload, and account deletion.
+
+## Security
+
+- Keep `SUPABASE_SECRET_KEY` only in the server's `.env` or hosting provider's
+  encrypted environment variables.
+- Never put the secret key in EJS, browser JavaScript, or `.env.example`.
+- Use the publishable key for browser clients and enforce RLS for direct browser
+  access.
+- Change the default admin and session passwords before deployment.
