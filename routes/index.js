@@ -302,8 +302,50 @@ router.post('/users/login', async (req, res) => {
       });
     }
 
-    const user = await User.findById(authData.user.id);
+    // The home page uses one login form for both residents and admins. An
+    // email address is not enough to identify the account type, so use the
+    // trusted Supabase role after authentication instead.
+    const authUser = authData.user;
+    const authRole = authUser.app_metadata?.role || authUser.user_metadata?.role;
+    if (authRole === 'admin') {
+      req.session.adminId = authUser.id;
+      req.session.username = authUser.user_metadata?.username || process.env.SUPABASE_ADMIN_USERNAME;
+      req.session.role = 'admin';
+      req.session.admin = {
+        id: authUser.id,
+        username: req.session.username,
+        email: authUser.email,
+        role: 'admin'
+      };
+
+      // Avoid retaining a resident identity if the browser previously used
+      // the resident login flow.
+      delete req.session.userId;
+      delete req.session.userRole;
+      delete req.session.userName;
+      delete req.session.userEmail;
+      delete req.session.unitNumber;
+      delete req.session.avatarUrl;
+
+      return res.json({
+        success: true,
+        message: 'Login successful!',
+        redirectUrl: '/admin/dashboard',
+        user: {
+          id: authUser.id,
+          name: req.session.username,
+          role: 'admin',
+          email: authUser.email
+        }
+      });
+    }
+
+    const user = await User.findById(authUser.id);
     if (!user) return res.json({ success: false, message: 'Resident profile was not found' });
+
+    if (user.role !== 'resident') {
+      return res.status(403).json({ success: false, message: 'This account cannot use the resident dashboard' });
+    }
 
     // Check if user is active (pending admin approval if inactive)
     if (!user.isActive) {
@@ -324,7 +366,14 @@ router.post('/users/login', async (req, res) => {
     req.session.userName = user.firstName + ' ' + user.lastName;
     req.session.userEmail = user.email;
     req.session.unitNumber = user.unitNumber;
-  req.session.avatarUrl = user.avatarUrl || '';
+    req.session.avatarUrl = user.avatarUrl || '';
+
+    // Avoid retaining an admin identity if the browser previously used the
+    // admin login flow.
+    delete req.session.adminId;
+    delete req.session.username;
+    delete req.session.role;
+    delete req.session.admin;
 
     res.json({
       success: true,
