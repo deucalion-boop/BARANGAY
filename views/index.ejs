@@ -8,27 +8,13 @@
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
-        /* Hide reCAPTCHA test message and warning banner */
+        /* Keep the Google-owned reCAPTCHA UI unmodified so its checkbox and
+           challenge dialog remain aligned and clickable. */
         .g-recaptcha > div > div {
             filter: none !important;
         }
         .g-recaptcha iframe {
             filter: none !important;
-        }
-        /* Hide any warning/info text that appears with test keys */
-        .g-recaptcha + div,
-        .g-recaptcha ~ div[style],
-        div[style*="background"][style*="color"],
-        div[style*="border"][style*="padding"] {
-            display: none !important;
-            visibility: hidden !important;
-            height: 0 !important;
-            overflow: hidden !important;
-        }
-        /* Target the specific warning message container */
-        body > div[style*="position: absolute"],
-        body > div[style*="z-index"][style*="background"] {
-            display: none !important;
         }
         
         /* Modal Styles - Keep existing modal styles with updated colors */
