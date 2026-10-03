@@ -1,55 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Connect with Barangay Malimba. Access community announcements, request appointments, and stay informed through our resident portal.">
-    <meta name="theme-color" content="#1646a0">
-    <title><%= title %> | Barangay Malimba</title>
-    <link rel="icon" href="/images/logo.png" type="image/png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/landing.css">
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-    <script src="/js/landing.js" defer></script>
-</head>
+<%- include('partials/public-head', { pageTitle: title, pageDescription: 'Connect with Barangay Malimba. Access community announcements, request appointments, and stay informed through our resident portal.' }) %>
 <body class="landing-page">
     <% const registrationEnabled = typeof allowUserRegistration === 'undefined' || allowUserRegistration !== false; %>
     <% const announcements = typeof homeAnnouncements !== 'undefined' && Array.isArray(homeAnnouncements) ? homeAnnouncements : []; %>
     <% const signedIn = typeof isAuthenticated !== 'undefined' && isAuthenticated === true; %>
     <% const dashboardUrl = typeof admin !== 'undefined' && admin ? '/admin/dashboard' : '/users/dashboard'; %>
-    <%- include('partials/landing-icons') %>
-    <a class="skip-link" href="#main-content">Skip to main content</a>
-
-    <div class="utility-bar">
-        <div class="page-container utility-inner">
-            <span><i class="fa-solid fa-location-dot" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-location-dot"></use></svg></i> Gapan City, Nueva Ecija</span>
-            <a href="tel:+639153511681"><i class="fa-solid fa-phone" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-phone"></use></svg></i> <span>Need assistance?</span> +63 915 351 1681</a>
-        </div>
-    </div>
-
-    <header class="site-header">
-        <div class="page-container header-inner">
-            <a class="brand" href="/" aria-label="Barangay Malimba home">
-                <img src="/images/logo.png" alt="" width="56" height="56">
-                <span class="brand-copy"><strong>Barangay Malimba</strong><span>COMMUNITY PORTAL</span></span>
-            </a>
-            <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation" aria-controls="primary-navigation" aria-expanded="false">
-                <i class="fa-solid fa-bars" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-bars"></use></svg></i>
-            </button>
-            <nav class="primary-navigation" id="primary-navigation" aria-label="Main navigation">
-                <div class="nav-menu">
-                    <a href="/" class="nav-link current" aria-current="page">Home</a>
-                    <a href="#services" class="nav-link">Services</a>
-                    <a href="#announcements" class="nav-link">Announcements</a>
-                    <a href="/about" class="nav-link">About us</a>
-                    <a href="/contact" class="nav-link">Contact</a>
-                </div>
-                <a href="<%= signedIn ? dashboardUrl : '/users/login' %>" class="button button-primary nav-signin" data-open-login><%= signedIn ? 'My portal' : 'Sign in' %> <i class="fa-solid fa-arrow-right" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-arrow-right"></use></svg></i></a>
-            </nav>
-        </div>
-    </header>
+    <%- include('partials/public-header', { currentPage: 'home' }) %>
 
     <main id="main-content" tabindex="-1">
         <section class="hero-section" aria-labelledby="hero-title">
@@ -181,18 +138,8 @@
         </section>
     </main>
 
-    <footer class="site-footer">
-        <div class="page-container">
-            <div class="footer-grid">
-                <div class="footer-brand"><a class="brand" href="/" aria-label="Barangay Malimba home"><img src="/images/logo.png" alt="" width="56" height="56"><span class="brand-copy"><strong>Barangay Malimba</strong><span>COMMUNITY PORTAL</span></span></a><p>Bringing our people and services closer.<br>Serving Malimba, together.</p></div>
-                <div class="footer-links"><h2>Explore</h2><a href="#services">Our services</a><a href="#announcements">Announcements</a><a href="/about">About our barangay</a><a href="/contact">Contact us</a></div>
-                <div class="footer-contact"><h2>Get in touch</h2><p><i class="fa-solid fa-location-dot" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-location-dot"></use></svg></i><span>Barangay Malimba, Gapan City,<br>Nueva Ecija, Philippines</span></p><a href="tel:+639153511681"><i class="fa-solid fa-phone" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-phone"></use></svg></i> +63 915 351 1681</a><a href="mailto:sheenkahlie@gmail.com"><i class="fa-regular fa-envelope" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-envelope"></use></svg></i> sheenkahlie@gmail.com</a></div>
-            </div>
-            <div class="footer-bottom"><p>&copy; <%= new Date().getFullYear() %> Barangay Malimba. All rights reserved.</p><span>Made for our community <i class="fa-solid fa-heart" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-heart"></use></svg></i></span></div>
-        </div>
-    </footer>
+    <%- include('partials/public-footer') %>
 
-    <%- include('partials/landing-auth', { registrationEnabled }) %>
-    <script id="home-config" type="application/json"><%- JSON.stringify({ allowUserRegistration: registrationEnabled, isAuthenticated: signedIn, dashboardUrl }) %></script>
+    <%- include('partials/public-auth') %>
 </body>
 </html>

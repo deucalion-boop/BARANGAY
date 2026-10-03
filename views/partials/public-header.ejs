@@ -1,0 +1,32 @@
+<% const headerSignedIn = typeof isAuthenticated !== 'undefined' && isAuthenticated === true; %>
+<% const headerDashboardUrl = typeof admin !== 'undefined' && admin ? '/admin/dashboard' : '/users/dashboard'; %>
+<%- include('landing-icons') %>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+    <div class="utility-bar">
+        <div class="page-container utility-inner">
+            <span><i class="fa-solid fa-location-dot" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-location-dot"></use></svg></i> Gapan City, Nueva Ecija</span>
+            <a href="tel:+639153511681"><i class="fa-solid fa-phone" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-phone"></use></svg></i> <span>Need assistance?</span> +63 915 351 1681</a>
+        </div>
+    </div>
+
+    <header class="site-header">
+        <div class="page-container header-inner">
+            <a class="brand" href="/" aria-label="Barangay Malimba home">
+                <img src="/images/logo.png" alt="" width="56" height="56">
+                <span class="brand-copy"><strong>Barangay Malimba</strong><span>COMMUNITY PORTAL</span></span>
+            </a>
+            <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation" aria-controls="primary-navigation" aria-expanded="false">
+                <i class="fa-solid fa-bars" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-bars"></use></svg></i>
+            </button>
+            <nav class="primary-navigation" id="primary-navigation" aria-label="Main navigation">
+                <div class="nav-menu">
+                    <a href="/" class="nav-link<%= currentPage === 'home' ? ' current' : '' %>"<%- currentPage === 'home' ? ' aria-current="page"' : '' %>>Home</a>
+                    <a href="/#services" class="nav-link">Services</a>
+                    <a href="/#announcements" class="nav-link">Announcements</a>
+                    <a href="/about" class="nav-link<%= currentPage === 'about' ? ' current' : '' %>"<%- currentPage === 'about' ? ' aria-current="page"' : '' %>>About us</a>
+                    <a href="/contact" class="nav-link<%= currentPage === 'contact' ? ' current' : '' %>"<%- currentPage === 'contact' ? ' aria-current="page"' : '' %>>Contact</a>
+                </div>
+                <a href="<%= headerSignedIn ? headerDashboardUrl : '/users/login' %>" class="button button-primary nav-signin" data-open-login><%= headerSignedIn ? 'My portal' : 'Sign in' %> <i class="fa-solid fa-arrow-right" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-arrow-right"></use></svg></i></a>
+            </nav>
+        </div>
+    </header>

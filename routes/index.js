@@ -57,7 +57,9 @@ router.get('/', async (req, res) => {
 router.get('/about', (req, res) => {
   res.render('about', { 
     title: 'About Us',
-    activePage: 'about'
+    activePage: 'about',
+    allowUserRegistration: require('../utils/settings').get('allowUserRegistration') !== false,
+    recaptchaSiteKey: recaptchaConfig.siteKey
   });
 });
 
@@ -65,7 +67,9 @@ router.get('/about', (req, res) => {
 router.get('/contact', (req, res) => {
   res.render('contact', { 
     title: 'Contact Us',
-    activePage: 'contact'
+    activePage: 'contact',
+    allowUserRegistration: require('../utils/settings').get('allowUserRegistration') !== false,
+    recaptchaSiteKey: recaptchaConfig.siteKey
   });
 });
 

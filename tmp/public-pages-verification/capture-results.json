@@ -1,0 +1,242 @@
+[
+  {
+    "viewport": 1425,
+    "scrollWidth": 1425,
+    "height": 3705,
+    "title": "About us | Barangay Malimba",
+    "h1": [
+      "Our community.Our shared commitment."
+    ],
+    "overflow": [],
+    "missingImages": [],
+    "activeNavigation": [
+      "About us"
+    ],
+    "mapFrames": [],
+    "page": "about",
+    "width": 1440,
+    "exceptions": []
+  },
+  {
+    "viewport": 753,
+    "scrollWidth": 753,
+    "height": 3485,
+    "title": "About us | Barangay Malimba",
+    "h1": [
+      "Our community.Our shared commitment."
+    ],
+    "overflow": [],
+    "missingImages": [],
+    "activeNavigation": [
+      "About us"
+    ],
+    "mapFrames": [],
+    "page": "about",
+    "width": 768,
+    "exceptions": []
+  },
+  {
+    "viewport": 390,
+    "scrollWidth": 390,
+    "height": 5296,
+    "title": "About us | Barangay Malimba",
+    "h1": [
+      "Our community.Our shared commitment."
+    ],
+    "overflow": [],
+    "missingImages": [],
+    "activeNavigation": [
+      "About us"
+    ],
+    "mapFrames": [],
+    "page": "about",
+    "width": 390,
+    "exceptions": []
+  },
+  {
+    "viewport": 320,
+    "scrollWidth": 320,
+    "height": 5335,
+    "title": "About us | Barangay Malimba",
+    "h1": [
+      "Our community.Our shared commitment."
+    ],
+    "overflow": [],
+    "missingImages": [],
+    "activeNavigation": [
+      "About us"
+    ],
+    "mapFrames": [],
+    "page": "about",
+    "width": 320,
+    "exceptions": []
+  },
+  {
+    "viewport": 1425,
+    "scrollWidth": 1425,
+    "height": 4194,
+    "title": "Community Portal - Home | Barangay Malimba",
+    "h1": [
+      "A stronger community.Closer to you."
+    ],
+    "overflow": [],
+    "missingImages": [],
+    "activeNavigation": [
+      "Home"
+    ],
+    "mapFrames": [],
+    "page": "index",
+    "width": 1440,
+    "exceptions": []
+  },
+  {
+    "viewport": 753,
+    "scrollWidth": 753,
+    "height": 4123,
+    "title": "Community Portal - Home | Barangay Malimba",
+    "h1": [
+      "A stronger community.Closer to you."
+    ],
+    "overflow": [],
+    "missingImages": [],
+    "activeNavigation": [
+      "Home"
+    ],
+    "mapFrames": [],
+    "page": "index",
+    "width": 768,
+    "exceptions": []
+  },
+  {
+    "viewport": 390,
+    "scrollWidth": 390,
+    "height": 7002,
+    "title": "Community Portal - Home | Barangay Malimba",
+    "h1": [
+      "A stronger community.Closer to you."
+    ],
+    "overflow": [],
+    "missingImages": [],
+    "activeNavigation": [
+      "Home"
+    ],
+    "mapFrames": [],
+    "page": "index",
+    "width": 390,
+    "exceptions": []
+  },
+  {
+    "viewport": 320,
+    "scrollWidth": 320,
+    "height": 7223,
+    "title": "Community Portal - Home | Barangay Malimba",
+    "h1": [
+      "A stronger community.Closer to you."
+    ],
+    "overflow": [],
+    "missingImages": [],
+    "activeNavigation": [
+      "Home"
+    ],
+    "mapFrames": [],
+    "page": "index",
+    "width": 320,
+    "exceptions": []
+  },
+  {
+    "viewport": 1425,
+    "scrollWidth": 1425,
+    "height": 2496,
+    "title": "Contact us | Barangay Malimba",
+    "h1": [
+      "A conversation away.Here for our community."
+    ],
+    "overflow": [],
+    "missingImages": [],
+    "activeNavigation": [
+      "Contact"
+    ],
+    "mapFrames": [
+      {
+        "src": "https://www.google.com/maps?q=15.2505608,120.9475923&z=15&output=embed",
+        "title": "Barangay Malimba Gapan, City, Nueva Ecija on Google Maps",
+        "loading": "lazy"
+      }
+    ],
+    "page": "contact",
+    "width": 1440,
+    "exceptions": []
+  },
+  {
+    "viewport": 753,
+    "scrollWidth": 753,
+    "height": 2682,
+    "title": "Contact us | Barangay Malimba",
+    "h1": [
+      "A conversation away.Here for our community."
+    ],
+    "overflow": [],
+    "missingImages": [],
+    "activeNavigation": [
+      "Contact"
+    ],
+    "mapFrames": [
+      {
+        "src": "https://www.google.com/maps?q=15.2505608,120.9475923&z=15&output=embed",
+        "title": "Barangay Malimba Gapan, City, Nueva Ecija on Google Maps",
+        "loading": "lazy"
+      }
+    ],
+    "page": "contact",
+    "width": 768,
+    "exceptions": []
+  },
+  {
+    "viewport": 390,
+    "scrollWidth": 390,
+    "height": 3970,
+    "title": "Contact us | Barangay Malimba",
+    "h1": [
+      "A conversation away.Here for our community."
+    ],
+    "overflow": [],
+    "missingImages": [],
+    "activeNavigation": [
+      "Contact"
+    ],
+    "mapFrames": [
+      {
+        "src": "https://www.google.com/maps?q=15.2505608,120.9475923&z=15&output=embed",
+        "title": "Barangay Malimba Gapan, City, Nueva Ecija on Google Maps",
+        "loading": "lazy"
+      }
+    ],
+    "page": "contact",
+    "width": 390,
+    "exceptions": []
+  },
+  {
+    "viewport": 320,
+    "scrollWidth": 320,
+    "height": 4210,
+    "title": "Contact us | Barangay Malimba",
+    "h1": [
+      "A conversation away.Here for our community."
+    ],
+    "overflow": [],
+    "missingImages": [],
+    "activeNavigation": [
+      "Contact"
+    ],
+    "mapFrames": [
+      {
+        "src": "https://www.google.com/maps?q=15.2505608,120.9475923&z=15&output=embed",
+        "title": "Barangay Malimba Gapan, City, Nueva Ecija on Google Maps",
+        "loading": "lazy"
+      }
+    ],
+    "page": "contact",
+    "width": 320,
+    "exceptions": []
+  }
+]

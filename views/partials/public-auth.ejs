@@ -1,0 +1,5 @@
+<% const publicRegistrationEnabled = typeof allowUserRegistration === 'undefined' || allowUserRegistration !== false; %>
+<% const publicSignedIn = typeof isAuthenticated !== 'undefined' && isAuthenticated === true; %>
+<% const publicDashboardUrl = typeof admin !== 'undefined' && admin ? '/admin/dashboard' : '/users/dashboard'; %>
+<%- include('landing-auth', { registrationEnabled: publicRegistrationEnabled }) %>
+<script id="home-config" type="application/json"><%- JSON.stringify({ allowUserRegistration: publicRegistrationEnabled, isAuthenticated: publicSignedIn, dashboardUrl: publicDashboardUrl }) %></script>

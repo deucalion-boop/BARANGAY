@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-04",
+  "browser": "Installed Chrome 154 in an isolated headless profile",
+  "preview": "Render-only Express/EJS fixture; production server was not started by this verification agent",
+  "pages": ["about", "contact", "index"],
+  "viewports": [1440, 768, 390, 320],
+  "responsiveChecks": "All twelve page/width combinations have no horizontal overflow, missing images, or runtime exceptions. Each page has one h1 and the correct active navigation link. Lazy images were scrolled into view before full-page screenshots. Contact screenshots include the final spacing and 44px copy-button fixes.",
+  "behaviorAssertionsPassed": 62,
+  "behaviorResults": "behavior-results.json",
+  "responsiveResults": "capture-results.json",
+  "checkedBehaviors": "Guest/resident/admin/registration-disabled/sparse-locals EJS render paths, mobile menus, modal focus/background/scroll restoration, auth hash behavior, narrow login dialogs, duplicate IDs and SVG symbol resolution, six About health staff cards and complete poster/team image aspect ratios, About appointment sign-in CTA, Contact tel/mail/map links, map embed accessibility, clipboard success/rejection/unavailable fallback.",
+  "fixtureData": "Announcements and authenticated resident/admin locals were synthetic. Dashboard targets led to local preview-only routes. Clipboard API success/rejection/unavailable branches were mocked in the isolated page; the system clipboard was not modified.",
+  "limitations": "External fonts, Google reCAPTCHA, and Google Maps requests were blocked for deterministic offline checks. Real captcha challenges, Google map rendering, backend authentication/registration, and email delivery were not exercised. Tel/mail destinations were inspected without launching external apps.",
+  "dataSafety": "No .env values were loaded, no production data or backend jobs were accessed, and no authentication/registration POST was made.",
+  "cleanup": "Temporary verification server/browser were stopped and generated source scripts/browser profile removed. Screenshots and JSON reports retained."
+}

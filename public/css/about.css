@@ -1,0 +1,75 @@
+.about-page .page-hero-copy h1 { max-width: 660px; }
+.about-page .page-hero-copy h1 > span { color: var(--blue); }
+.about-page .about-hero-photo > img { aspect-ratio: 4 / 3; object-position: center 70%; }
+.about-hero-photo .page-hero-caption { display: flex; align-items: center; gap: 8px; }
+.about-introduction { padding-block: 52px; border-bottom: 1px solid var(--line); }
+.about-introduction-grid { display: grid; grid-template-columns: .9fr 1.1fr; align-items: center; gap: 80px; }
+.about-introduction h2 { font-size: clamp(25px, 2.6vw, 32px); }
+.about-introduction-grid > p { color: var(--muted); font-size: 14px; line-height: 1.9; }
+.direction-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
+.direction-card { min-width: 0; overflow: hidden; background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 6px 24px rgb(21 36 64 / 3%); }
+.direction-heading { display: flex; align-items: center; gap: 14px; padding: 24px 28px; }
+.direction-icon { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 12px; color: var(--blue); background: #edf3fd; flex-shrink: 0; font-size: 21px; }
+.direction-icon-green { color: #247765; background: #e9f6f3; }
+.direction-label { display: block; color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: 1.5px; margin-bottom: 4px; }
+.direction-heading h3 { font-size: 20px; letter-spacing: -.5px; }
+.direction-image { display: block; width: 100%; height: auto; object-fit: contain; border-block: 1px solid var(--line); }
+.direction-copy { color: var(--muted); font-size: 13px; line-height: 1.9; padding: 22px 28px 27px; }
+.health-team-heading { display: flex; align-items: center; justify-content: space-between; gap: 32px; max-width: none; }
+.health-team-heading > div > p:not(.eyebrow) { margin-top: 13px; color: var(--muted); font-size: 14px; }
+.health-team-mark { display: grid; place-items: center; width: 64px; height: 64px; border: 1px solid #dbe6f6; border-radius: 17px; background: #edf3fd; color: var(--blue); font-size: 30px; flex-shrink: 0; }
+.health-staff-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+.staff-card { position: relative; min-width: 0; padding: 27px 26px 23px; border: 1px solid var(--line); border-radius: 13px; background: #fff; transition: border-color .2s, box-shadow .2s; }
+.staff-card:hover { border-color: #bdcee7; box-shadow: 0 8px 24px rgb(21 36 64 / 5%); }
+.staff-card-top { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 21px; }
+.staff-avatar { display: grid; place-items: center; width: 54px; height: 54px; border-radius: 50%; color: var(--blue); background: #edf3fd; font-family: 'Manrope', 'Segoe UI', sans-serif; font-size: 16px; font-weight: 800; }
+.staff-role { display: inline-block; padding: 5px 9px; border-radius: 5px; color: #247765; background: #e9f6f3; font-size: 9px; line-height: 1.5; font-weight: 800; letter-spacing: .8px; }
+.staff-role-nutrition { color: var(--blue); background: #edf3fd; }
+.staff-name { font-size: 16px; font-weight: 800; letter-spacing: -.35px; overflow-wrap: anywhere; }
+.staff-description { font-size: 11px; color: var(--muted); margin-top: 7px; }
+.staff-phone { display: flex; align-items: center; gap: 10px; padding-top: 17px; margin-top: 21px; border-top: 1px solid #edf1f7; font-size: 13px; font-weight: 600; color: #4e5e77; }
+.staff-phone i { color: var(--blue); font-size: 12px; }
+.barangay-team-banner { overflow: hidden; margin-top: 45px; border-radius: 16px; border: 1px solid var(--line); background: #f8fafd; }
+.barangay-team-banner > img { width: 100%; height: auto; object-fit: contain; }
+.barangay-team-banner figcaption { display: flex; align-items: center; gap: 16px; padding: 26px 30px; }
+.team-banner-icon { display: grid; place-items: center; width: 48px; height: 48px; flex-shrink: 0; background: #e8effa; color: var(--blue); font-size: 22px; border-radius: 12px; }
+.barangay-team-banner h3 { font-size: 19px; letter-spacing: -.5px; }
+.barangay-team-banner p { margin-top: 7px; font-size: 12px; line-height: 1.8; color: var(--muted); }
+.about-cta { padding-top: 0; }
+
+@media (max-width: 960px) {
+    .about-introduction-grid { gap: 40px; }
+    .health-staff-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .direction-heading { padding: 22px; }
+    .direction-copy { padding: 20px 22px 25px; }
+}
+@media (max-width: 640px) {
+    .about-introduction { padding-block: 38px; }
+    .about-introduction-grid { grid-template-columns: 1fr; gap: 19px; }
+    .direction-grid { grid-template-columns: 1fr; gap: 23px; }
+    .health-team-heading { align-items: flex-start; gap: 18px; }
+    .health-team-mark { width: 44px; height: 44px; border-radius: 12px; font-size: 21px; }
+    .health-staff-grid { gap: 16px; }
+    .staff-card { padding: 22px 18px 20px; }
+    .staff-name { font-size: 14px; }
+    .staff-description { font-size: 10px; }
+    .staff-card-top { gap: 8px; margin-bottom: 17px; }
+    .staff-avatar { width: 45px; height: 45px; font-size: 14px; }
+    .staff-role { padding: 4px 7px; font-size: 8px; }
+    .staff-phone { font-size: 11px; gap: 8px; }
+    .barangay-team-banner { margin-top: 30px; }
+    .barangay-team-banner figcaption { padding: 22px; align-items: flex-start; }
+    .barangay-team-banner h3 { font-size: 17px; }
+}
+@media (max-width: 480px) {
+    .health-staff-grid { grid-template-columns: 1fr; }
+    .staff-card { padding: 24px; }
+    .staff-name { font-size: 16px; }
+    .staff-description { font-size: 11px; }
+    .staff-phone { font-size: 13px; }
+    .staff-avatar { width: 52px; height: 52px; font-size: 16px; }
+    .staff-role { padding: 5px 9px; font-size: 9px; }
+    .health-team-mark { display: none; }
+    .barangay-team-banner figcaption { padding: 20px; gap: 12px; }
+    .team-banner-icon { width: 39px; height: 39px; border-radius: 10px; font-size: 19px; }
+}
