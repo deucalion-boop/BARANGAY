@@ -1,0 +1,147 @@
+    <!-- Unified Login Modal -->
+    <div class="modal resident-modal" id="resident-modal" role="dialog" aria-modal="true" aria-labelledby="login-title" aria-hidden="true">
+        <div class="modal-content">
+            <button type="button" class="close-modal" aria-label="Close dialog">&times;</button>
+            <div class="modal-header">
+                <div class="modal-icon">
+                    <i class="fas fa-user"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-user"></use></svg></i>
+                </div>
+                <h2 class="modal-title" id="login-title">Welcome back</h2>
+                <p class="modal-subtitle">Sign in to your Barangay Malimba account.</p>
+            </div>
+            <form class="login-form" id="resident-form">
+                <div class="form-group">
+                    <label for="login-identifier">Email or Username</label>
+                    <div class="input-wrap">
+                        <input type="text" id="login-identifier" autocomplete="username" placeholder="Enter your email or username" required>
+                        <i class="fas fa-id-badge input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-id-badge"></use></svg></i>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <div class="input-wrap">
+                        <input type="password" id="login-password" autocomplete="current-password" placeholder="Enter your password" required>
+                        <i class="fas fa-lock input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-lock"></use></svg></i>
+                    </div>
+                </div>
+                <div class="form-group captcha-row">
+                    <div class="g-recaptcha" data-size="compact" data-sitekey="<%= typeof recaptchaSiteKey !== 'undefined' ? recaptchaSiteKey : '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI' %>"></div>
+                </div>
+                <button type="submit" class="login-submit">Sign In</button>
+                <div class="form-footer">
+                    <% if (registrationEnabled) { %><p>Don't have an account? <a href="#" id="register-link">Register here</a></p><% } %>
+                    <p><a href="/users/forgot-password">Forgot your password?</a></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div class="modal register-modal" id="register-modal" role="dialog" aria-modal="true" aria-labelledby="register-title" aria-hidden="true">
+        <div class="modal-content">
+            <button type="button" class="close-modal" aria-label="Close dialog">&times;</button>
+            <div class="modal-header">
+                <div class="modal-icon">
+                    <i class="fas fa-user-plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-user-plus"></use></svg></i>
+                </div>
+                <h2 class="modal-title" id="register-title">Create your account</h2>
+                <p class="modal-subtitle">Your connection to a better community.</p>
+                <div class="register-steps-indicator" aria-label="Registration steps">
+                    <span id="step-indicator-1" class="step-indicator active">1</span>
+                    <span id="step-indicator-2" class="step-indicator">2</span>
+                    <span id="step-indicator-3" class="step-indicator">3</span>
+                </div>
+            </div>
+            <form class="login-form" id="register-form">
+                <!-- Step 1: Personal Info -->
+                <div class="register-step" id="register-step-1">
+                    <h3>Step 1: Personal Information</h3>
+                    <div class="form-group">
+                        <label for="register-name">Full Name</label>
+                        <div class="input-wrap">
+                            <input type="text" id="register-name" autocomplete="name" placeholder="Enter your full name" required>
+                            <i class="fas fa-user input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-user"></use></svg></i>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-phone">Phone Number</label>
+                        <div class="input-wrap">
+                            <input type="tel" id="register-phone" autocomplete="tel" placeholder="+639123456789" aria-describedby="phone-hint" required>
+                            <i class="fas fa-phone input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-phone"></use></svg></i>
+                        </div>
+                        <p class="field-hint" id="phone-hint">Include your country code, for example +639123456789.</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-unit">Purok</label>
+                        <div class="input-wrap">
+                            <select id="register-unit" required>
+                                <option value="">Select Purok</option>
+                                <option value="1">Purok 1</option>
+                                <option value="2">Purok 2</option>
+                                <option value="3">Purok 3</option>
+                                <option value="4">Purok 4</option>
+                                <option value="5">Purok 5</option>
+                                <option value="6">Purok 6</option>
+                                <option value="7">Purok 7</option>
+                            </select>
+                            <i class="fas fa-home input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-home"></use></svg></i>
+                        </div>
+                    </div>
+                    <div class="register-actions">
+                        <button type="button" class="login-submit" id="next-step-1">Next</button>
+                    </div>
+                </div>
+                <!-- Step 2: Account Info -->
+                <div class="register-step" id="register-step-2" style="display:none;">
+                    <h3>Step 2: Account Information</h3>
+                    <div class="form-group">
+                        <label for="register-email">Email Address</label>
+                        <div class="input-wrap">
+                            <input type="email" id="register-email" autocomplete="email" placeholder="yourname@gmail.com" aria-describedby="email-hint" required>
+                            <i class="fas fa-envelope input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-envelope"></use></svg></i>
+                        </div>
+                        <p class="field-hint" id="email-hint">Use your Gmail address to register.</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">Password</label>
+                        <div class="input-wrap">
+                            <input type="password" id="register-password" autocomplete="new-password" placeholder="At least 8 characters" minlength="8" required>
+                            <i class="fas fa-lock input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-lock"></use></svg></i>
+                        </div>
+                        <div class="password-strength">
+                            <div class="password-strength-bar" id="password-strength-bar"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-confirm-password">Confirm Password</label>
+                        <div class="input-wrap">
+                            <input type="password" id="register-confirm-password" autocomplete="new-password" placeholder="Confirm your password" required>
+                            <i class="fas fa-lock input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#icon-lock"></use></svg></i>
+                        </div>
+                    </div>
+                    <div class="register-actions">
+                        <button type="button" class="login-submit" id="prev-step-2">Back</button>
+                        <button type="button" class="login-submit" id="next-step-2">Next</button>
+                    </div>
+                </div>
+                <!-- Step 3: Confirmation -->
+                <div class="register-step" id="register-step-3" style="display:none;">
+                    <h3>Step 3: Confirmation</h3>
+                    <div class="form-group captcha-row">
+                        <div class="g-recaptcha" data-size="compact" data-sitekey="<%= typeof recaptchaSiteKey !== 'undefined' ? recaptchaSiteKey : '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI' %>"></div>
+                    </div>
+                    <div class="terms-checkbox">
+                        <input type="checkbox" id="terms-agreement" required>
+                        <label for="terms-agreement">I agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a></label>
+                    </div>
+                    <div class="register-actions">
+                        <button type="button" class="login-submit" id="prev-step-3">Back</button>
+                        <button type="submit" class="login-submit">Create Account</button>
+                    </div>
+                    <div class="form-footer">
+                        <p>Already have an account? <a href="#" id="login-link">Sign in here</a></p>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>

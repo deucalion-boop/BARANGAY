@@ -1,0 +1,32 @@
+{
+  "passed": 27,
+  "checks": [
+    "SSR announcements survive API failure",
+    "Mobile navigation starts closed",
+    "Menu opens accessibly",
+    "Escape closes menu and restores toggle focus",
+    "Mobile nav sign in opens dialog",
+    "Mobile nav dialog returns focus to visible menu toggle",
+    "Registration trigger opens modal and closes menu",
+    "Modal focuses name and makes background inert",
+    "Empty registration stays on first step",
+    "Valid personal details advance registration",
+    "Invalid email keeps account step visible",
+    "Valid account details advance to final step",
+    "Back navigation preserves account values",
+    "Modal close restores scroll and inert state",
+    "Login hash opens dialog and focuses identifier",
+    "Login modal fits narrow viewport",
+    "Reverse Tab wraps within login dialog",
+    "Forward Tab wraps to close button",
+    "Close button hides login dialog",
+    "Disabled registration exposes sign in calls to action",
+    "API announcement refresh renders three cards",
+    "Empty announcements display useful state",
+    "No runtime exceptions",
+    "Authenticated resident gets dashboard links",
+    "Authenticated resident header opens dashboard",
+    "Authenticated admin gets admin dashboard links",
+    "Authenticated auth hash redirects to correct dashboard"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-04",
+  "browser": "Installed Chrome 154 in an isolated headless profile",
+  "preview": "Render-only Express/EJS fixture; production server was not started",
+  "viewports": [1440, 768, 390, 320],
+  "responsiveChecks": "No horizontal overflow, missing images, or JavaScript exceptions. Login dialogs fit all four widths, focus the identifier, and restore scrolling/inert state on Escape. Below-fold lazy photos were loaded before full-page captures.",
+  "behaviorAssertionsPassed": 27,
+  "behaviorResults": "behavior-results.json",
+  "responsiveResults": "capture-results.json",
+  "fixtureData": "Representative announcements, registration enabled/disabled, and resident/admin authentication locals were synthetic. Announcement API success/empty/failure were local fixtures. Dashboard links led to local preview-only routes.",
+  "limitations": "External font and Google reCAPTCHA requests were blocked for deterministic offline checks. Compact widget configuration was asserted, but the real Google challenge was not exercised. No authentication or registration POST was made; real Supabase, session authentication, and email behavior were not exercised.",
+  "dataSafety": "No .env values were read or exposed, and no production data or backend jobs were accessed.",
+  "cleanup": "Temporary verification server/browser were stopped and generated source scripts/browser profile were removed. Screenshots and JSON reports were retained."
+}
