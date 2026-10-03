@@ -166,7 +166,7 @@ function cleanupExpiredOTPs() {
 }
 
 // Run cleanup every 5 minutes
-setInterval(cleanupExpiredOTPs, 5 * 60 * 1000);
+setInterval(cleanupExpiredOTPs, 5 * 60 * 1000).unref();
 
 // Send general email (for notifications, announcements, etc.)
 async function sendEmail(to, toName, subject, htmlContent, textContent = '', attachment = '', attachmentName = '') {

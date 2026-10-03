@@ -1,8 +1,8 @@
 const express = require('express');
+require('dotenv').config();
 // Session and auth middleware
 const { sessionMiddleware, requireAuth, requireAdminAuth, attachLocals, errorHandler, notFoundHandler } = require('./middleware/mw');
 const path = require('path');
-require('dotenv').config();
 const { createSupabaseAuthClient, createSupabaseAdminClient } = require('./config/supabase');
 const User = require('./models/User');
 const { verifyRecaptcha } = require('./utils/recaptcha');
@@ -12,14 +12,21 @@ const { sendOTPEmail, verifyOTP, generateOTP, sendWelcomeEmail, sendNotification
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isVercel = process.env.VERCEL === '1';
+const settings = require('./utils/settings');
 
 // Core middleware
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+// A lightweight deployment check that does not depend on Supabase or sessions.
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
 // If running behind a proxy/ingress (e.g., NGINX/Heroku), enable trust proxy so secure cookies work correctly
-if (process.env.TRUST_PROXY === '1') {
+if (isVercel || process.env.TRUST_PROXY === '1') {
   app.set('trust proxy', 1);
 }
 
@@ -33,20 +40,26 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Authentication middleware moved to ./middleware/mw
 
+// Load settings once per instance, when a request arrives. Exporting the app
+// must not wait for a remote database query during Vercel initialization.
+app.use((req, res, next) => {
+  settings.load().then(() => next(), next);
+});
+
 // Routes
 app.use('/', require('./routes/index'));
 app.use('/admin', require('./routes/admin'));
 app.use('/users', require('./routes/user'));
 
 // Supabase-backed maintenance jobs
-const inventoryMonitor = require('./jobs/inventoryMonitor');
-const scheduleExpiry = require('./jobs/scheduleExpiry');
-const runAnnouncementScheduler = require('./jobs/announcementScheduler');
 let backgroundJobsStarted = false;
 
 function startBackgroundJobs() {
   if (backgroundJobsStarted) return;
   backgroundJobsStarted = true;
+  const inventoryMonitor = require('./jobs/inventoryMonitor');
+  const scheduleExpiry = require('./jobs/scheduleExpiry');
+  const runAnnouncementScheduler = require('./jobs/announcementScheduler');
   inventoryMonitor.start();
   scheduleExpiry.initializeScheduleExpiry();
   runAnnouncementScheduler().catch((error) => console.error('Announcement scheduler error:', error.message));
@@ -443,4 +456,10 @@ function startServer(port, attempts = 0) {
   });
 }
 
-require('./utils/settings').load().finally(() => startServer(Number(PORT)));
+// Vercel invokes the exported Express application. Standalone Node execution
+// retains its port listener and recurring maintenance jobs.
+module.exports = app;
+
+if (require.main === module && !isVercel) {
+  settings.load().finally(() => startServer(Number(PORT)));
+}

@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Barangay community portal backed by Supabase",
   "main": "server.js",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
